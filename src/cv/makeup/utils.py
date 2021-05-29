@@ -414,16 +414,16 @@ def apply_makeup():
 
             Globals.prev_frame = gray.copy()
 
-            return image
+            # return image
 
-            # (flag, encodedImage) = cv2.imencode(".png", image)
+            (flag, encodedImage) = cv2.imencode(".png", image)
             
-            # # ensure the frame was successfully encoded
-            # if not flag:
-            #     continue
-            # # yield the output frame in the byte format
-            # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-            #     bytearray(encodedImage) + b'\r\n')
+            # ensure the frame was successfully encoded
+            if not flag:
+                continue
+            # yield the output frame in the byte format
+            yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+                bytearray(encodedImage) + b'\r\n')
 
         # for region in constants.LIPS:
         #     roi_x = []
