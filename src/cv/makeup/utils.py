@@ -376,7 +376,7 @@ def apply_makeup():
                     face_crop = image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
 
                     # image.flags.writeable = False
-                    results = face_mesh.process(image)
+                    results = Globals.face_mesher.process(image)
                     # image.flags.writeable = True
         
                     if results.multi_face_landmarks:
