@@ -1,10 +1,9 @@
 import cv2
 import threading
 import mediapipe as mp
-from mediapipe.python.solutions import face_detection
-
-from numpy.core.shape_base import _block_info_recursion
 from skimage.draw import polygon
+from mediapipe.python.solutions import face_detection
+from mediapipe.python.solutions import face_mesh
 
 from src.cv.makeup import commons, constants
 
@@ -21,6 +20,7 @@ class Makeup_Worker:
 class Globals:
     cap = cv2.VideoCapture()
     face_detector = face_detection.FaceDetection(min_detection_confidence=.5)
+    face_mesher = face_mesh.FaceMesh(min_detection_confidence=.5, min_tracking_confidence=.5)
     makeup_workers = {}
 
     blush       = Makeup_Worker()
@@ -322,10 +322,6 @@ def join_makeup_workers_static(image):
 
 
 def apply_makeup():
-    with mp_face_mesh.FaceMesh(
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5) as face_mesh:
-
         while Globals.cap.isOpened():
 
             success, image = Globals.cap.read()
