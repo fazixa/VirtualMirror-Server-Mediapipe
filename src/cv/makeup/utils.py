@@ -77,7 +77,7 @@ def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
         # image [top_y:bottom_y, top_x:bottom_x, ] = image2
 
     out_queue.append({
-        'index': 2,
+        'index': 4,
         'crops': crops,
         'bounds': bounds
     })
@@ -111,7 +111,7 @@ def blush_worker(image, r, g, b, intensity, out_queue) -> None:
     Globals.blush.bounds = bounds
 
     out_queue.append({
-        'index': 1,
+        'index': 3,
         'crops': crops,
         'bounds': bounds
     })
@@ -182,7 +182,7 @@ def eyeshadow_worker(image, r, g, b, intensity, out_queue) -> None:
     Globals.eyeshadow.bounds = bounds
 
     out_queue.append({
-        'index': 0,
+        'index': 2,
         'crops': crops,
         'bounds': bounds
     })
@@ -216,7 +216,7 @@ def eyeliner_worker(image, r, g, b, intensity, out_queue) -> None:
     Globals.eyeliner.bounds = bounds
 
     out_queue.append({
-        'index': 0,
+        'index': 1,
         'crops': crops,
         'bounds': bounds
     })
@@ -253,7 +253,7 @@ def foundation_worker(image, r, g, b, intensity, out_queue) -> None:
     Globals.foundation.bounds = bounds
 
     out_queue.append({
-        'index': 0,
+        'index': 5,
         'crops': crops,
         'bounds': bounds
     })
@@ -266,7 +266,7 @@ Globals.makeup_workers = {
     'eyeshadow_worker':     { 'function': eyeshadow_worker,     'instance': Globals.eyeshadow,  'args': [], 'enabled': False },
     'blush_worker':         { 'function': blush_worker,         'instance': Globals.blush,      'args': [], 'enabled': False },
     'concealer_worker':     { 'function': concealer_worker,     'instance': Globals.concealer,  'args': [], 'enabled': False },
-    'foundation_worker':    { 'function': foundation_worker,    'instance': Globals.foundation, 'args': [], 'enabled': False, 'enabled_first': False },
+    'foundation_worker':    { 'function': foundation_worker,    'instance': Globals.foundation, 'args': [], 'enabled': False },
 }
 
 def join_makeup_workers(image):
@@ -355,7 +355,7 @@ def apply_makeup():
             for contour in cnts: 
                 temp = cv2.contourArea(contour)
                 print(temp)
-                if temp < 700:  
+                if temp < 500:  
                     continue
                 Globals.motion_detected = True
 
