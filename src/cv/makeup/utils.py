@@ -1,6 +1,8 @@
 import cv2
 import threading
 import mediapipe as mp
+from mediapipe.python.solutions import face_detection
+
 from numpy.core.shape_base import _block_info_recursion
 from skimage.draw import polygon
 
@@ -12,12 +14,13 @@ mp_drawing = mp.solutions.drawing_utils
 
 class Makeup_Worker:
     def __init__(self, result=None, bounds=None) -> None:
-        self.result = result
+        self.crops = result
         self.bounds = bounds
 
 
 class Globals:
     cap = cv2.VideoCapture()
+    face_detector = face_detection.FaceDetection(min_detection_confidence=.5)
     makeup_workers = {}
 
     blush       = Makeup_Worker()
@@ -26,6 +29,16 @@ class Globals:
     concealer   = Makeup_Worker()
     eyeshadow   = Makeup_Worker()
     foundation  = Makeup_Worker()
+
+    #### Motion Detection Vars ####
+    prev_frame = None
+    motion_detected = True
+
+    f_xmin = None
+    f_ymin = None
+    f_width = None
+    f_height = None
+    ################################
 
     idx_to_coordinates = []
     output_frame = None
@@ -59,7 +72,7 @@ def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
         crops.append(commons.apply_blur2(crop, cc-top_y, rr-top_x, b, g, r, intensity))
         bounds.append([top_x, top_y, bottom_x, bottom_y])
 
-    Globals.concealer.result = crops
+    Globals.concealer.crops = crops
     Globals.concealer.bounds = bounds
         # image [top_y:bottom_y, top_x:bottom_x, ] = image2
 
@@ -94,7 +107,7 @@ def blush_worker(image, r, g, b, intensity, out_queue) -> None:
         crops.append(commons.apply_blur2(crop, cc-top_y, rr-top_x, b, g, r, intensity))
         bounds.append([top_x, top_y, bottom_x, bottom_y])
 
-    Globals.blush.result = crops
+    Globals.blush.crops = crops
     Globals.blush.bounds = bounds
 
     out_queue.append({
@@ -127,11 +140,10 @@ def lipstick_worker(image, r, g, b, intensity, out_queue) -> None:
 
         crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
         bounds.append([top_x, top_y, bottom_x, bottom_y])
 
-    Globals.lipstick.result = crops
+    Globals.lipstick.crops = crops
     Globals.lipstick.bounds = bounds
 
     out_queue.append({
@@ -162,13 +174,11 @@ def eyeshadow_worker(image, r, g, b, intensity, out_queue) -> None:
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
 
-        crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
         bounds.append([top_x, top_y, bottom_x, bottom_y])
 
-    Globals.eyeshadow.result = crops
+    Globals.eyeshadow.crops = crops
     Globals.eyeshadow.bounds = bounds
 
     out_queue.append({
@@ -198,14 +208,11 @@ def eyeliner_worker(image, r, g, b, intensity, out_queue) -> None:
         rr, cc = polygon(roi_x, roi_y)
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-
-        crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
         bounds.append([top_x, top_y, bottom_x, bottom_y])
 
-    Globals.eyeliner.result = crops
+    Globals.eyeliner.crops = crops
     Globals.eyeliner.bounds = bounds
 
     out_queue.append({
@@ -242,7 +249,7 @@ def foundation_worker(image, r, g, b, intensity, out_queue) -> None:
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
         bounds.append([top_x, top_y, bottom_x, bottom_y])
 
-    Globals.foundation.result = crops
+    Globals.foundation.crops = crops
     Globals.foundation.bounds = bounds
 
     out_queue.append({
@@ -293,6 +300,27 @@ def join_makeup_workers(image):
     return image
 
 
+def join_makeup_workers_static(image):
+    shared_list = []
+
+    for makeup_worker in Globals.makeup_workers:
+        worker = Globals.makeup_workers[makeup_worker]
+
+        if worker['enabled']:
+            shared_list.append({
+                'crops': worker['instance'].crops,
+                'bounds': worker['instance'].bounds
+            })
+
+    while len(shared_list) > 0:
+        temp_img = shared_list.pop()
+
+        for crop, [top_x, top_y, bottom_x, bottom_y] in zip(temp_img['crops'], temp_img['bounds']):
+                image[top_y:bottom_y, top_x:bottom_x, ] = crop
+
+    return image
+
+
 def apply_makeup():
     with mp_face_mesh.FaceMesh(
         min_detection_confidence=0.5,
@@ -303,51 +331,103 @@ def apply_makeup():
             success, image = Globals.cap.read()
             if not success:
                 print("Ignoring empty camera frame.")
-                return image
+                continue
+
+
+            # To improve performance, optionally mark the image as not writeable to
+            # pass by reference.
+            image.flags.writeable = False
 
             Globals.output_frame = image
 
             # Flip the image horizontally for a later selfie-view display
             image = cv2.flip(image, 1)
-            # To improve performance, optionally mark the image as not writeable to
-            # pass by reference.
-            image.flags.writeable = False
-            results = face_mesh.process(image)
-            image.flags.writeable = True
 
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+            if Globals.prev_frame is None:
+                Globals.prev_frame = gray
+                continue
+    
+            frame_diff = cv2.absdiff(Globals.prev_frame, gray)
+
+            frame_thresh = cv2.threshold(frame_diff, 25, 255, cv2.THRESH_BINARY)[1] 
+            frame_thresh = cv2.dilate(frame_thresh, None, iterations=2)
+
+            cnts, _ = cv2.findContours(frame_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
+
+            for contour in cnts: 
+                temp = cv2.contourArea(contour)
+                print(temp)
+                if temp < 700:  
+                    continue
+                Globals.motion_detected = True
+
+            if Globals.motion_detected:
+                print('motion detected')
+
+                results = Globals.face_detector.process(image)
+
+                im_height, im_width = image.shape[:2]
+
+                if results.detections:
+                    for detection in results.detections:
+                        Globals.f_xmin = f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
+                        Globals.f_ymin = f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
+                        Globals.f_width = f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
+                        Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
+
+                    face_crop = image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
+
+                    # image.flags.writeable = False
+                    results = face_mesh.process(image)
+                    # image.flags.writeable = True
         
-            if results.multi_face_landmarks:
-                for landmark_list in results.multi_face_landmarks:
-        
-                    image_rows, image_cols, _ = image.shape
-                    idx_to_coordinates = {}
-                    for idx, landmark in enumerate(landmark_list.landmark):
-                        
-                        if ((landmark.HasField('visibility') and
-                            landmark.visibility < constants.VISIBILITY_THRESHOLD) or
-                            (landmark.HasField('presence') and
-                            landmark.presence < constants.PRESENCE_THRESHOLD)):
-                            continue
-                        landmark_px = commons._normalized_to_pixel_coordinates(landmark.x, landmark.y,
-                                                                    image_cols, image_rows)
+                    if results.multi_face_landmarks:
+                        for landmark_list in results.multi_face_landmarks:
+                
+                            image_rows, image_cols, _ = image.shape
+                            idx_to_coordinates = {}
+                            for idx, landmark in enumerate(landmark_list.landmark):
+                                
+                                if ((landmark.HasField('visibility') and
+                                    landmark.visibility < constants.VISIBILITY_THRESHOLD) or
+                                    (landmark.HasField('presence') and
+                                    landmark.presence < constants.PRESENCE_THRESHOLD)):
+                                    continue
+                                landmark_px = commons._normalized_to_pixel_coordinates(landmark.x, landmark.y,
+                                                                            image_cols, image_rows)
 
-                        if landmark_px:
-                            idx_to_coordinates[idx] = landmark_px
+                                if landmark_px:
+                                    idx_to_coordinates[idx] = landmark_px
 
-                Globals.idx_to_coordinates = idx_to_coordinates
+                        Globals.idx_to_coordinates = idx_to_coordinates
+            
             ## CROP HERE
 
-            image = join_makeup_workers(image)
+                        image = join_makeup_workers(image)
+
+                        Globals.motion_detected = False
+
+            else:
+                print('no motion')
+                face_crop = image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width]
+                image = join_makeup_workers_static(image)
+            # uncrop here
 
 
-            (flag, encodedImage) = cv2.imencode(".png", image)
+            Globals.prev_frame = gray.copy()
+
+            return image
+
+            # (flag, encodedImage) = cv2.imencode(".png", image)
             
-            # ensure the frame was successfully encoded
-            if not flag:
-                continue
-            # yield the output frame in the byte format
-            yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-                bytearray(encodedImage) + b'\r\n')
+            # # ensure the frame was successfully encoded
+            # if not flag:
+            #     continue
+            # # yield the output frame in the byte format
+            # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+            #     bytearray(encodedImage) + b'\r\n')
 
         # for region in constants.LIPS:
         #     roi_x = []
@@ -374,7 +454,6 @@ def apply_makeup():
         #     image [top_y:bottom_y, top_x:bottom_x, ] = image2
 
             
-        # uncrop here
 
 
         # return image
