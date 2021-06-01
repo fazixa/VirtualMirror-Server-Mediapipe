@@ -485,16 +485,16 @@ def apply_makeup():
                         Globals.f_width = f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
                         Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
 
-                    # face_crop = image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
+                    face_crop = image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
 
                     # image.flags.writeable = False
-                    results = Globals.face_mesher.process(image)
+                    results = Globals.face_mesher.process(face_crop)
                     # image.flags.writeable = True
         
                     if results.multi_face_landmarks:
                         for landmark_list in results.multi_face_landmarks:
                 
-                            image_rows, image_cols, _ = image.shape
+                            image_rows, image_cols, _ = face_crop.shape
                             idx_to_coordinates = {}
                             for idx, landmark in enumerate(landmark_list.landmark):
                                 
@@ -513,14 +513,14 @@ def apply_makeup():
             
             ## CROP HERE
 
-                        image = join_makeup_workers(image)
+                        image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = join_makeup_workers(face_crop)
 
                         Globals.motion_detected = False
 
             else:
                 print('no motion')
-                # face_crop = image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width]
-                image = join_makeup_workers_static(image)
+                face_crop = image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width]
+                image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width] = join_makeup_workers_static(face_crop)
             # uncrop here
 
 
