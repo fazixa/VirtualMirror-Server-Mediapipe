@@ -64,7 +64,7 @@ def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
 
-        crops.append(commons.apply_blur2(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
     # Globals.concealer.crops = crops
@@ -82,7 +82,7 @@ def concealer_worker_static(image, r, g, b, intensity, out_queue) -> None:
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.concealer.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x]
-        crops.append(commons.apply_blur2(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
 
     out_queue.append({
         'index': 4,
@@ -112,7 +112,7 @@ def blush_worker(image, r, g, b, intensity, out_queue) -> None:
         
         crop = image[top_y:bottom_y, top_x:bottom_x, ]
 
-        crops.append(commons.apply_blur2(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
     # Globals.blush.crops = crops
@@ -130,7 +130,7 @@ def blush_worker_static(image, r, g, b, intensity, out_queue) -> None:
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.blush.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x]
-        crops.append(commons.apply_blur2(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
 
     out_queue.append({
         'index': 4,

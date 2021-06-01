@@ -131,7 +131,7 @@ def apply_blur(image, image2, x, y, gussiankernel, erosionkernel):
     return im_copy
 
 
-def apply_blur2(image, x, y, r, g, b, intensity):
+def apply_blur_color(image, x, y, r, g, b, intensity):
     # intensity = 0.8
     # r = 51
     # g = 36
