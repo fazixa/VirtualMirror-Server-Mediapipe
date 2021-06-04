@@ -1,7 +1,9 @@
 import cv2, threading, mediapipe as mp
+from numpy import ndarray
 from skimage.draw import polygon
 from mediapipe.python.solutions import face_detection
 from mediapipe.python.solutions import face_mesh
+import traceback
 
 from src.cv.makeup import commons, constants
 
@@ -41,6 +43,8 @@ class Globals:
 
     idx_to_coordinates = []
     output_frame = None
+    face_resize_width = 500
+
 
 
 ############################################################## WORKERS #################################################################
@@ -304,8 +308,7 @@ def eyeliner_worker_static(image, r, g, b, intensity, out_queue) -> None:
     })
 
 
-def foundation_worker(image, r, g, b, intensity, out_queue) -> None:
-    crops = []
+def foundation_worker(image, r, g, b, intensity) -> ndarray:
     bounds = []
 
     for region in constants.FOUNDATION:
@@ -325,32 +328,22 @@ def foundation_worker(image, r, g, b, intensity, out_queue) -> None:
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
+        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
+
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
-    # Globals.foundation.crops = crops
     Globals.foundation.bounds = bounds
 
-    out_queue.append({
-        'index': 5,
-        'crops': crops,
-        'bounds': bounds
-    })
+    return image
 
-
-def foundation_worker_static(image, r, g, b, intensity, out_queue) -> None:
-    crops = []
-
+def foundation_worker_static(image, r, g, b, intensity) -> ndarray:    
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.foundation.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x,]
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
+        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
+    
+    return image
 
-    out_queue.append({
-        'index': 4,
-        'crops': crops,
-        'bounds': Globals.foundation.bounds
-    })
 
 ####################################################################################################################################
 
@@ -362,13 +355,16 @@ Globals.makeup_workers = {
     'eyeshadow_worker':     { 'function': eyeshadow_worker,     'static_function': eyeshadow_worker_static,  'args': [], 'enabled': False },
     'blush_worker':         { 'function': blush_worker,         'static_function': blush_worker_static,      'args': [], 'enabled': False },
     'concealer_worker':     { 'function': concealer_worker,     'static_function': concealer_worker_static,  'args': [], 'enabled': False },
-    'foundation_worker':    { 'function': foundation_worker,    'static_function': foundation_worker_static, 'args': [], 'enabled': False },
+    'foundation_worker':    { 'function': foundation_worker,    'static_function': foundation_worker_static, 'args': [], 'enabled': False, 'enabled_first': False },
 }
 
 
 def join_makeup_workers(image):
     threads = []
     shared_list = []
+
+    if Globals.makeup_workers['foundation_worker']['enabled_first']:
+        image = foundation_worker(image, *Globals.makeup_workers['foundation_worker']['args'])
 
     for makeup_worker in Globals.makeup_workers:
         worker = Globals.makeup_workers[makeup_worker]
@@ -401,6 +397,9 @@ def join_makeup_workers_static(image):
     threads = []
     shared_list = []
 
+    if Globals.makeup_workers['foundation_worker']['enabled_first']:
+        image = foundation_worker_static(image, *Globals.makeup_workers['foundation_worker']['args'])
+
     for makeup_worker in Globals.makeup_workers:
         worker = Globals.makeup_workers[makeup_worker]
 
@@ -426,27 +425,6 @@ def join_makeup_workers_static(image):
                 image[cc, rr] = crop[cc-top_y, rr-top_x]
 
     return image
-
-
-# def join_makeup_workers_static(image):
-#     shared_list = []
-
-#     for makeup_worker in Globals.makeup_workers:
-#         worker = Globals.makeup_workers[makeup_worker]
-
-#         if worker['enabled']:
-#             shared_list.append({
-#                 'crops': worker['instance'].crops,
-#                 'bounds': worker['instance'].bounds
-#             })
-
-#     while len(shared_list) > 0:
-#         temp_img = shared_list.pop()
-
-#         for crop, [rr, cc, top_x, top_y] in zip(temp_img['crops'], temp_img['bounds']):
-#                 image[cc, rr] = crop[cc-top_y, rr-top_x]
-
-#     return image
 
 
 def apply_makeup():
@@ -485,6 +463,7 @@ def apply_makeup():
                     continue
                 Globals.motion_detected = True
 
+            
             if Globals.motion_detected:
                 print('motion detected')
 
@@ -500,10 +479,16 @@ def apply_makeup():
                         Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
 
                     if f_xmin < 0 or f_ymin < 0:
-                        print('Face outside of camera view, please move insied')
+                        print('Face outside of camera view, please move inside')
                         continue
 
                     face_crop = image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
+
+                    # crop_height, crop_width = face_crop.shape[:2]
+
+                    # face_crop = cv2.resize(face_crop,
+                    #             (Globals.face_resize_width, int(crop_height * Globals.face_resize_width / float(crop_width))),
+                    #             interpolation=cv2.INTER_AREA)
 
                     # image.flags.writeable = False
                     results = Globals.face_mesher.process(face_crop)
@@ -529,31 +514,46 @@ def apply_makeup():
 
                         Globals.idx_to_coordinates = idx_to_coordinates
             
-            ## CROP HERE
 
-                        image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = join_makeup_workers(face_crop)
+                        try:
+                            face_crop = join_makeup_workers(face_crop)
+                        except Exception as e:
+                            print(e)
 
+                        # face_crop = cv2.resize(face_crop, (crop_width, crop_height), interpolation=cv2.INTER_AREA)
+                        image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = face_crop
+                        
                         Globals.motion_detected = False
 
             else:
                 print('no motion')
                 face_crop = image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width]
-                image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width] = join_makeup_workers_static(face_crop)
-            # uncrop here
+                
+                # crop_height, crop_width = face_crop.shape[:2]
+                # face_crop = cv2.resize(face_crop,
+                #                 (Globals.face_resize_width, int(crop_height * Globals.face_resize_width / float(crop_width))),
+                #                 interpolation=cv2.INTER_AREA)
 
+                try:
+                    face_crop = join_makeup_workers_static(face_crop)
+                except Exception as e:
+                    traceback.print_exc()
+
+                # face_crop = cv2.resize(face_crop, (crop_width, crop_height), interpolation=cv2.INTER_AREA)
+                image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width] = face_crop
 
             Globals.prev_frame = gray.copy()
 
-            # return image
+            return image
 
-            (flag, encodedImage) = cv2.imencode(".jpg", image)
+            # (flag, encodedImage) = cv2.imencode(".jpg", image)
             
-            # ensure the frame was successfully encoded
-            if not flag:
-                continue
-            # yield the output frame in the byte format
-            yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
-                bytearray(encodedImage) + b'\r\n')
+            # # ensure the frame was successfully encoded
+            # if not flag:
+            #     continue
+            # # yield the output frame in the byte format
+            # yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
+            #     bytearray(encodedImage) + b'\r\n')
 
 
 def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7):
@@ -573,7 +573,7 @@ def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7):
         Globals.makeup_workers['concealer_worker']['enabled'] = True
     elif makeup_type == 'foundation':
         Globals.makeup_workers['foundation_worker']['args'] = [r, g, b, intensity]
-        Globals.makeup_workers['foundation_worker']['enabled'] = True
+        Globals.makeup_workers['foundation_worker']['enabled_first'] = True
     elif makeup_type == 'eyeliner':
         Globals.makeup_workers['eyeliner_worker']['args'] = [r, g, b, intensity]
         Globals.makeup_workers['eyeliner_worker']['enabled'] = True

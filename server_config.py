@@ -11,7 +11,7 @@ from src.route.simulation import *
 # from src.route.blush import *
 # from src.route.foundation import *
 # from src.route.lipstick import *
-# from src.route.eyeliner import *
+from src.route.eyeliner import *
 # from src.route.concealer import *
 
 # Load environment config from .env file
@@ -37,7 +37,7 @@ app.register_blueprint(simulation)
 # app.register_blueprint(blushr)
 # app.register_blueprint(foundationm)
 # app.register_blueprint(lipstickm)
-# app.register_blueprint(eyelinerm)
+app.register_blueprint(eyelinerm)
 # app.register_blueprint(concealerm)
 
 # Start connect to MongoDB
