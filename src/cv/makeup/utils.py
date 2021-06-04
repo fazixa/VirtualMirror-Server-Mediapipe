@@ -37,6 +37,8 @@ class Globals:
     f_height = None
     ################################
 
+    makeup_args = None
+
     idx_to_coordinates = []
     output_frame = None
 
@@ -436,109 +438,112 @@ def join_makeup_workers_static(image):
 def apply_makeup():
         while Globals.cap.isOpened():
 
-            success, image = Globals.cap.read()
-            if not success:
-                print("Ignoring empty camera frame.")
-                continue
-
-
-            # To improve performance, optionally mark the image as not writeable to
-            # pass by reference.
-            image.flags.writeable = False
-
-            Globals.output_frame = image
-
-            # Flip the image horizontally for a later selfie-view display
-            image = cv2.flip(image, 1)
-
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-            if Globals.prev_frame is None:
-                Globals.prev_frame = gray
-                continue
-    
-            frame_diff = cv2.absdiff(Globals.prev_frame, gray)
-
-            frame_thresh = cv2.threshold(frame_diff, 25, 255, cv2.THRESH_BINARY)[1] 
-            frame_thresh = cv2.dilate(frame_thresh, None, iterations=2)
-
-            cnts, _ = cv2.findContours(frame_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
-
-            for contour in cnts: 
-                temp = cv2.contourArea(contour)
-                print(temp)
-                if temp < 500:  
+            try:
+                success, image = Globals.cap.read()
+                if not success:
+                    print("Ignoring empty camera frame.")
                     continue
-                Globals.motion_detected = True
 
-            if Globals.motion_detected:
-                print('motion detected')
 
-                results = Globals.face_detector.process(image)
+                # To improve performance, optionally mark the image as not writeable to
+                # pass by reference.
+                image.flags.writeable = False
 
-                im_height, im_width = image.shape[:2]
+                Globals.output_frame = image
 
-                if results.detections:
-                    for detection in results.detections:
-                        Globals.f_xmin = f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
-                        Globals.f_ymin = f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
-                        Globals.f_width = f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
-                        Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
+                # Flip the image horizontally for a later selfie-view display
+                image = cv2.flip(image, 1)
 
-                    face_crop = image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
+                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-                    # image.flags.writeable = False
-                    results = Globals.face_mesher.process(face_crop)
-                    # image.flags.writeable = True
+                if Globals.prev_frame is None:
+                    Globals.prev_frame = gray
+                    continue
         
-                    if results.multi_face_landmarks:
-                        for landmark_list in results.multi_face_landmarks:
+                frame_diff = cv2.absdiff(Globals.prev_frame, gray)
+
+                frame_thresh = cv2.threshold(frame_diff, 25, 255, cv2.THRESH_BINARY)[1] 
+                frame_thresh = cv2.dilate(frame_thresh, None, iterations=2)
+
+                cnts, _ = cv2.findContours(frame_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
+
+                for contour in cnts: 
+                    temp = cv2.contourArea(contour)
+                    print(temp)
+                    if temp < 500:  
+                        continue
+                    Globals.motion_detected = True
+
+                if Globals.motion_detected:
+                    print('motion detected')
+
+                    results = Globals.face_detector.process(image)
+
+                    im_height, im_width = image.shape[:2]
+
+                    if results.detections:
+                        for detection in results.detections:
+                            Globals.f_xmin = f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
+                            Globals.f_ymin = f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
+                            Globals.f_width = f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
+                            Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
+
+                        face_crop = image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
+
+                        # image.flags.writeable = False
+                        results = Globals.face_mesher.process(face_crop)
+                        # image.flags.writeable = True
+            
+                        if results.multi_face_landmarks:
+                            for landmark_list in results.multi_face_landmarks:
+                    
+                                image_rows, image_cols, _ = face_crop.shape
+                                idx_to_coordinates = {}
+                                for idx, landmark in enumerate(landmark_list.landmark):
+                                    
+                                    if ((landmark.HasField('visibility') and
+                                        landmark.visibility < constants.VISIBILITY_THRESHOLD) or
+                                        (landmark.HasField('presence') and
+                                        landmark.presence < constants.PRESENCE_THRESHOLD)):
+                                        continue
+                                    landmark_px = commons._normalized_to_pixel_coordinates(landmark.x, landmark.y,
+                                                                                image_cols, image_rows)
+
+                                    if landmark_px:
+                                        idx_to_coordinates[idx] = landmark_px
+
+                            Globals.idx_to_coordinates = idx_to_coordinates
                 
-                            image_rows, image_cols, _ = face_crop.shape
-                            idx_to_coordinates = {}
-                            for idx, landmark in enumerate(landmark_list.landmark):
-                                
-                                if ((landmark.HasField('visibility') and
-                                    landmark.visibility < constants.VISIBILITY_THRESHOLD) or
-                                    (landmark.HasField('presence') and
-                                    landmark.presence < constants.PRESENCE_THRESHOLD)):
-                                    continue
-                                landmark_px = commons._normalized_to_pixel_coordinates(landmark.x, landmark.y,
-                                                                            image_cols, image_rows)
+                ## CROP HERE
 
-                                if landmark_px:
-                                    idx_to_coordinates[idx] = landmark_px
+                            image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = join_makeup_workers(face_crop)
 
-                        Globals.idx_to_coordinates = idx_to_coordinates
-            
-            ## CROP HERE
+                            Globals.motion_detected = False
 
-                        image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = join_makeup_workers(face_crop)
-
-                        Globals.motion_detected = False
-
-            else:
-                print('no motion')
-                face_crop = image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width]
-                image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width] = join_makeup_workers_static(face_crop)
-            # uncrop here
+                else:
+                    print('no motion')
+                    face_crop = image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width]
+                    image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width] = join_makeup_workers_static(face_crop)
+                # uncrop here
 
 
-            Globals.prev_frame = gray.copy()
+                Globals.prev_frame = gray.copy()
 
-            return image
+                # return image
 
-            # (flag, encodedImage) = cv2.imencode(".png", image)
-            
-            # ensure the frame was successfully encoded
-            # if not flag:
-            #     continue
-            # # yield the output frame in the byte format
-            # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-            #     bytearray(encodedImage) + b'\r\n')
+                (flag, encodedImage) = cv2.imencode(".jpg", image)
+                
+                # ensure the frame was successfully encoded
+                if not flag:
+                    continue
+                # yield the output frame in the byte format
+                yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
+                    bytearray(encodedImage) + b'\r\n')
 
+            except Exception as e:
+                print(e)
 
-def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, lipstick_type='hard', gloss=False, k_h=81, k_w=81):
+def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7):
     Globals.motion_detected = True
     
     if makeup_type == 'eyeshadow':
