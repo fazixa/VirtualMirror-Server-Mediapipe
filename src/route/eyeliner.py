@@ -126,9 +126,7 @@ def simulator_lip():
                 crop_makeup = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
                 face_crop[top_y:bottom_y, top_x:bottom_x] = crop_makeup
 
-                # user_image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = face_crop
-
-                user_image = cv2.cvtColor(user_image, cv2.COLOR_BGR2RGB)
+                user_image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = face_crop[:, :, ::-1]
 
                 predict_result_intense = save_iamge(user_image,r,g,b,"eyeshadow",0.7)
                 predict_result_medium = save_iamge(user_image,r,g,b,"eyeshadow",0.5)
