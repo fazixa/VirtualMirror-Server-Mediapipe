@@ -6,15 +6,18 @@ from mediapipe.python.solutions import face_mesh
 import traceback
 
 from src.cv.makeup import commons, constants
+from src.cv.simulation.apply_lens import Lens
 
 mp_face_mesh = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
 
 
 class Makeup_Worker:
-    def __init__(self, result=None, bounds=None) -> None:
+    def __init__(self, result=None, bounds=None, instance=None) -> None:
         self.crops = result
         self.bounds = bounds
+        self.instance = instance() if instance is not None else None
+
 
 class Globals:
     cap = cv2.VideoCapture()
@@ -28,6 +31,7 @@ class Globals:
     concealer   = Makeup_Worker()
     eyeshadow   = Makeup_Worker()
     foundation  = Makeup_Worker()
+    lens        = Makeup_Worker(instance=Lens)
 
     #### Motion Detection Vars ####
     prev_frame = None
@@ -335,11 +339,18 @@ def foundation_worker_static(image, r, g, b, intensity) -> ndarray:
     return image
 
 
+def lens_worker(image, r, g, b, intensity) -> ndarray:
+    return Globals.lens.instance.apply_lens(image, r, g, b)
+
+def lens_worker_static(image, r, g, b, intensity) -> ndarray:    
+    return Globals.lens.instance.apply_lens_static(image, r, g, b)
+
+
 ####################################################################################################################################
 
 
 Globals.makeup_workers = {
-    # 'lens_worker':          { 'function': lens_worker,          'instance': Globals.lens,       'args': [], 'enabled': False },
+    'lens_worker':          { 'function': lens_worker,          'static_function': lens_worker_static,       'args': [], 'enabled': False, 'enabled_first': False},
     'lipstick_worker':      { 'function': lipstick_worker,      'static_function': lisptick_worker_static,   'args': [], 'enabled': False },
     'eyeshadow_worker':     { 'function': eyeshadow_worker,     'static_function': eyeshadow_worker_static,  'args': [], 'enabled': False },
     'eyeliner_worker':      { 'function': eyeliner_worker,      'static_function': eyeliner_worker_static,   'args': [], 'enabled': False },
@@ -355,6 +366,9 @@ def join_makeup_workers(image):
 
     if Globals.makeup_workers['foundation_worker']['enabled_first']:
         image = foundation_worker(image, *Globals.makeup_workers['foundation_worker']['args'])
+
+    if Globals.makeup_workers['lens_worker']['enabled_first']:
+        image = lens_worker(image, *Globals.makeup_workers['lens_worker']['args'])
 
     for makeup_worker in Globals.makeup_workers:
         worker = Globals.makeup_workers[makeup_worker]
@@ -389,6 +403,9 @@ def join_makeup_workers_static(image):
 
     if Globals.makeup_workers['foundation_worker']['enabled_first']:
         image = foundation_worker_static(image, *Globals.makeup_workers['foundation_worker']['args'])
+
+    if Globals.makeup_workers['lens_worker']['enabled_first']:
+        image = lens_worker_static(image, *Globals.makeup_workers['lens_worker']['args'])
 
     for makeup_worker in Globals.makeup_workers:
         worker = Globals.makeup_workers[makeup_worker]
@@ -507,11 +524,11 @@ def apply_makeup():
 
                         try:
                             face_crop = join_makeup_workers(face_crop)
+                            # face_crop = cv2.resize(face_crop, (crop_width, crop_height), interpolation=cv2.INTER_AREA)
+                            image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = face_crop
                         except Exception as e:
                             print(e)
 
-                        # face_crop = cv2.resize(face_crop, (crop_width, crop_height), interpolation=cv2.INTER_AREA)
-                        image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = face_crop
                         
                         Globals.motion_detected = False
 
@@ -526,11 +543,11 @@ def apply_makeup():
 
                 try:
                     face_crop = join_makeup_workers_static(face_crop)
+                    # face_crop = cv2.resize(face_crop, (crop_width, crop_height), interpolation=cv2.INTER_AREA)
+                    image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width] = face_crop
                 except Exception as e:
                     traceback.print_exc()
 
-                # face_crop = cv2.resize(face_crop, (crop_width, crop_height), interpolation=cv2.INTER_AREA)
-                image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width] = face_crop
 
             Globals.prev_frame = gray.copy()
 
@@ -568,8 +585,8 @@ def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, gloss=False):
         Globals.makeup_workers['eyeliner_worker']['args'] = [r, g, b, intensity]
         Globals.makeup_workers['eyeliner_worker']['enabled'] = True
     elif makeup_type == 'lens':
-        Globals.makeup_workers['lens_worker']['args'] = [r, g, b]
-        Globals.makeup_workers['lens_worker']['enabled'] = True
+        Globals.makeup_workers['lens_worker']['args'] = [r, g, b, intensity]
+        Globals.makeup_workers['lens_worker']['enabled_first'] = True
 
 
 Globals.makeup_args = enable_makeup.__code__.co_varnames
@@ -591,7 +608,7 @@ def disable_makeup(makeup_type):
     elif makeup_type == 'eyeliner':
         Globals.makeup_workers['eyeliner_worker']['enabled'] = False
     elif makeup_type == 'lens':
-        Globals.makeup_workers['lens_worker']['enabled'] = False
+        Globals.makeup_workers['lens_worker']['enabled_first'] = False
 
 
 def start_cam():
