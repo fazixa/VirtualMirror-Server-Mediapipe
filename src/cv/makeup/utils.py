@@ -51,7 +51,7 @@ def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
         
         This function applies the effect of concealer on an input face crop.
 
-        :return: the input face crop with a concealer effect applied to it
+        :return: The input face crop with a concealer effect applied to it
     """
 
     crops = []

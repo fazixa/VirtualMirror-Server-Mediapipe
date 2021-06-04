@@ -3,8 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Virtual Mirror's documentation!
+Virtual Mirror's Documentation
 ==========================================
+
+.. important::
+
+   This sample documentation was generated on |today|, and is rebuilt with every `master` release.
 
 .. toctree::
    :maxdepth: 2
