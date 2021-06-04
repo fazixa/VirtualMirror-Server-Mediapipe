@@ -13,13 +13,46 @@ mp_drawing = mp.solutions.drawing_utils
 
 
 class Makeup_Worker:
-    def __init__(self, result=None, bounds=None, instance=None) -> None:
-        self.crops = result
+    """Defines a makeup worker instance
+
+    Args:
+        arg1 (list): list of the bounds related to the makeup worker, it's assigned in normal worker functions and used in static worker functions
+        arg2 (class): an instance of the related makeup worker, in case it exists (E.g. Lens)
+
+    """
+    def __init__(self, bounds=None, instance=None) -> None:
         self.bounds = bounds
         self.instance = instance() if instance is not None else None
 
 
 class Globals:
+    """Holds global values that are used by static workers and other functions
+
+    Properties:
+        :cap: Video captured from webcam, can be closed and open upon request
+        :face_detector: Instance of MediaPipe face_detection module
+        :face_mesher: Instance of MediaPipe face_mesh module
+        :makeup_workers: Dictionary of the makeup workers and their related information
+        :makeup args: parameter names that are given to makeup workers, used in the api designed for this purpose
+        :makeup instances:
+            - lens
+            - eyeliner
+            - eyeshadow
+            - blush
+            - lipstick
+            - foundation
+            - concealer
+        :motion detection variables:
+            - **prev_frame**: holds the previos frame for comparing with the current frame
+            - **motion detected** (bool): True if motion detected, False otherwise, starts with True
+            - **f_xmin**: minimum x value among points of face crop
+            - **f_ymin**: minimum y value among points of face crop
+            - **f_width**: width of the face crop
+            - **f_height**: height of the face crop
+        :idx_to_coordinates: holds to coordinates calculated by turning face mesh index points to real coordinates in given image of face
+        :output_frame: holds the given image without any change for using in static function or in special conditions
+    """
+
     cap = cv2.VideoCapture()
     face_detector = face_detection.FaceDetection(min_detection_confidence=.5)
     face_mesher = face_mesh.FaceMesh(min_detection_confidence=.5, min_tracking_confidence=.5)
@@ -47,7 +80,7 @@ class Globals:
 
     idx_to_coordinates = []
     output_frame = None
-    face_resize_width = 500
+    # face_resize_width = 500
 
 
 
@@ -102,6 +135,20 @@ def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
 
 
 def concealer_worker_static(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies a concealer effect on an input image
+    with the calculated boundaries in the normal worker function.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
     crops = []
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.concealer.bounds:
@@ -116,6 +163,20 @@ def concealer_worker_static(image, r, g, b, intensity, out_queue) -> None:
 
 
 def blush_worker(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies a blush effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+    
     crops = []
     bounds = []
 
@@ -150,6 +211,21 @@ def blush_worker(image, r, g, b, intensity, out_queue) -> None:
 
 
 def blush_worker_static(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies a blush effect on an input image
+    with the calculated boundaries in the normal worker function.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.blush.bounds:
@@ -164,6 +240,20 @@ def blush_worker_static(image, r, g, b, intensity, out_queue) -> None:
 
 
 def lipstick_worker(image, r, g, b, intensity, gloss, out_queue) -> None:
+    """This function applies a lipstick effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
     bounds = []
 
@@ -217,6 +307,20 @@ def lisptick_worker_static(image, r, g, b, intensity, gloss, out_queue) -> None:
 
 
 def eyeshadow_worker(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies an eyeshadow effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
     bounds = []
 
@@ -266,6 +370,20 @@ def eyeshadow_worker_static(image, r, g, b, intensity, out_queue) -> None:
 
 
 def eyeliner_worker(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies an eyeliner effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
     bounds = []
 
@@ -315,6 +433,23 @@ def eyeliner_worker_static(image, r, g, b, intensity, out_queue) -> None:
 
 
 def foundation_worker(image, r, g, b, intensity) -> ndarray:
+    """This function applies a foundation effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        
+    Returns:
+        ndarray: The given image with the foundation effect applied on it, this image will be
+        used as an input to other activated makeup workers in order for them to apply their effect
+        on this image.
+    """
+
     bounds = []
 
     for region in constants.FOUNDATION:
@@ -354,6 +489,23 @@ def foundation_worker_static(image, r, g, b, intensity) -> ndarray:
 
 
 def lens_worker(image, r, g, b, intensity) -> ndarray:
+    """This function applies a contact lens effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        
+    Returns:
+        ndarray: The given image with the contact effect applied on it, this image will be
+        used as an input to other activated makeup workers in order for them to apply their effect
+        on this image.
+    """
+
     return Globals.lens.instance.apply_lens(image, r, g, b)
 
 def lens_worker_static(image, r, g, b, intensity) -> ndarray:    
