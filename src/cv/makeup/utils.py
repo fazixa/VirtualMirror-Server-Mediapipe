@@ -159,7 +159,7 @@ def blush_worker_static(image, r, g, b, intensity, out_queue) -> None:
     })
 
 
-def lipstick_worker(image, r, g, b, intensity, out_queue) -> None:
+def lipstick_worker(image, r, g, b, intensity, gloss, out_queue) -> None:
     crops = []
     bounds = []
 
@@ -179,7 +179,8 @@ def lipstick_worker(image, r, g, b, intensity, out_queue) -> None:
         rr, cc = polygon(roi_x, roi_y)
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
+        if gloss:
+            crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
@@ -194,12 +195,13 @@ def lipstick_worker(image, r, g, b, intensity, out_queue) -> None:
     })
 
 
-def lisptick_worker_static(image, r, g, b, intensity, out_queue) -> None:
+def lisptick_worker_static(image, r, g, b, intensity, gloss, out_queue) -> None:
     crops = []
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.lipstick.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
+        if gloss:
+           crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
 
@@ -556,14 +558,14 @@ def apply_makeup():
             #     bytearray(encodedImage) + b'\r\n')
 
 
-def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7):
+def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, gloss=False):
     Globals.motion_detected = True
     
     if makeup_type == 'eyeshadow':
         Globals.makeup_workers['eyeshadow_worker']['args'] = [r, g, b, intensity]
         Globals.makeup_workers['eyeshadow_worker']['enabled'] = True
     elif makeup_type == 'lipstick':
-        Globals.makeup_workers['lipstick_worker']['args'] = [r, g, b, intensity]
+        Globals.makeup_workers['lipstick_worker']['args'] = [r, g, b, intensity, gloss]
         Globals.makeup_workers['lipstick_worker']['enabled'] = True
     elif makeup_type == 'blush':
         Globals.makeup_workers['blush_worker']['args'] = [r, g, b, intensity]
