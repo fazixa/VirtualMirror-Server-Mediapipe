@@ -46,13 +46,7 @@ class Globals:
 ############################################################## WORKERS #################################################################
 
 def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
-    """
-        **Apply Concealer Effect (Non-Static)**
-        
-        This function applies the effect of concealer on an input face crop.
 
-        :return: The input face crop with a concealer effect applied to it
-    """
 
     crops = []
     bounds = []
@@ -88,6 +82,23 @@ def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
 
 
 def concealer_worker_static(image, r, g, b, intensity, out_queue) -> None:
+
+
+    """  This function applies the effect of concealer on an input cropped image.
+
+    Args:
+        arg1 (image) : input image
+        arg2 (int) : rgb value of red color 
+        arg3 (int) : rgb value of green color 
+        arg4 (int) : rgb value of blue color
+        arg5 (float) : intensity of the applied makeup
+        arg6 : ???
+
+    Returns:
+        ?? : ?
+            
+    """
+
     crops = []
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.concealer.bounds:
