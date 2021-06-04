@@ -139,7 +139,7 @@ def blush_worker_static(image, r, g, b, intensity, out_queue) -> None:
         crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
 
     out_queue.append({
-        'index': 4,
+        'index': 3,
         'crops': crops,
         'bounds': Globals.blush.bounds
     })
@@ -192,7 +192,7 @@ def lisptick_worker_static(image, r, g, b, intensity, gloss, out_queue) -> None:
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
 
     out_queue.append({
-        'index': 4,
+        'index': 0,
         'crops': crops,
         'bounds': Globals.lipstick.bounds
     })
@@ -226,7 +226,7 @@ def eyeshadow_worker(image, r, g, b, intensity, out_queue) -> None:
     Globals.eyeshadow.bounds = bounds
 
     out_queue.append({
-        'index': 2,
+        'index': 1,
         'crops': crops,
         'bounds': bounds
     })
@@ -241,7 +241,7 @@ def eyeshadow_worker_static(image, r, g, b, intensity, out_queue) -> None:
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
 
     out_queue.append({
-        'index': 4,
+        'index': 1,
         'crops': crops,
         'bounds': Globals.eyeshadow.bounds
     })
@@ -275,7 +275,7 @@ def eyeliner_worker(image, r, g, b, intensity, out_queue) -> None:
     Globals.eyeliner.bounds = bounds
 
     out_queue.append({
-        'index': 1,
+        'index': 2,
         'crops': crops,
         'bounds': bounds
     })
@@ -290,7 +290,7 @@ def eyeliner_worker_static(image, r, g, b, intensity, out_queue) -> None:
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
 
     out_queue.append({
-        'index': 4,
+        'index': 2,
         'crops': crops,
         'bounds': Globals.eyeliner.bounds
     })
@@ -341,8 +341,8 @@ def foundation_worker_static(image, r, g, b, intensity) -> ndarray:
 Globals.makeup_workers = {
     # 'lens_worker':          { 'function': lens_worker,          'instance': Globals.lens,       'args': [], 'enabled': False },
     'lipstick_worker':      { 'function': lipstick_worker,      'static_function': lisptick_worker_static,   'args': [], 'enabled': False },
-    'eyeliner_worker':      { 'function': eyeliner_worker,      'static_function': eyeliner_worker_static,   'args': [], 'enabled': False },
     'eyeshadow_worker':     { 'function': eyeshadow_worker,     'static_function': eyeshadow_worker_static,  'args': [], 'enabled': False },
+    'eyeliner_worker':      { 'function': eyeliner_worker,      'static_function': eyeliner_worker_static,   'args': [], 'enabled': False },
     'blush_worker':         { 'function': blush_worker,         'static_function': blush_worker_static,      'args': [], 'enabled': False },
     'concealer_worker':     { 'function': concealer_worker,     'static_function': concealer_worker_static,  'args': [], 'enabled': False },
     'foundation_worker':    { 'function': foundation_worker,    'static_function': foundation_worker_static, 'args': [], 'enabled': False, 'enabled_first': False },
@@ -534,16 +534,16 @@ def apply_makeup():
 
             Globals.prev_frame = gray.copy()
 
-            # return image
+            return image
 
-            (flag, encodedImage) = cv2.imencode(".jpg", image)
+            # (flag, encodedImage) = cv2.imencode(".jpg", image)
             
-            # ensure the frame was successfully encoded
-            if not flag:
-                continue
-            # yield the output frame in the byte format
-            yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
-                bytearray(encodedImage) + b'\r\n')
+            # # ensure the frame was successfully encoded
+            # if not flag:
+            #     continue
+            # # yield the output frame in the byte format
+            # yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
+            #     bytearray(encodedImage) + b'\r\n')
 
 
 def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, gloss=False):
@@ -595,7 +595,7 @@ def disable_makeup(makeup_type):
 
 
 def start_cam():
-    Globals.cap.open(1)
+    Globals.cap.open(0)
 
 def stop_cam():
     Globals.cap.release()
