@@ -7,8 +7,7 @@ Virtual Mirror's Documentation
 ==========================================
 
 .. important::
-
-   This sample documentation was generated on |today|, and is rebuilt with every `master` release.
+   This documentation was generated on |today|, and is rebuilt with every `master` release.
 
 .. toctree::
    :maxdepth: 2
