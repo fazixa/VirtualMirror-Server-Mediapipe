@@ -46,6 +46,14 @@ class Globals:
 ############################################################## WORKERS #################################################################
 
 def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
+    """
+        **Apply Concealer Effect (Non-Static)**
+        
+        This function applies the effect of concealer on an input face crop.
+
+        :return: the input face crop with a concealer effect applied to it
+    """
+
     crops = []
     bounds = []
 
@@ -583,7 +591,7 @@ def disable_makeup(makeup_type):
     elif makeup_type == 'concealer':
         Globals.makeup_workers['concealer_worker']['enabled'] = False
     elif makeup_type == 'foundation':
-        Globals.makeup_workers['foundation_worker']['enabled_first'] = False
+        Globals.makeup_workers['foundation_worker']['enabled'] = False
     elif makeup_type == 'eyeliner':
         Globals.makeup_workers['eyeliner_worker']['enabled'] = False
     elif makeup_type == 'lens':
@@ -591,7 +599,7 @@ def disable_makeup(makeup_type):
 
 
 def start_cam():
-    Globals.cap.open(0)
+    Globals.cap.open(2)
 
 def stop_cam():
     Globals.cap.release()
