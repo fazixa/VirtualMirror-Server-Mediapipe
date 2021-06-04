@@ -55,7 +55,7 @@ def simulator_lip():
     user_id = request.form.get('user_id')
     image_copy_name = 'simulated_image-{}.jpg'.format(str(user_id))
     user_image.save(os.path.join(SIMULATOR_INPUT, image_copy_name))
-    user_image = skimage_io.imread(os.path.join(SIMULATOR_INPUT, image_copy_name))
+    user_image = cv2.imread(os.path.join(SIMULATOR_INPUT, image_copy_name))
     
 
     r = int(request.form.get('r_value'))
@@ -128,7 +128,7 @@ def simulator_lip():
 
                 # user_image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = face_crop
 
-                # user_image = cv2.cvtColor(user_image, cv2.COLOR_BGR2RGB)
+                user_image = cv2.cvtColor(user_image, cv2.COLOR_BGR2RGB)
 
                 predict_result_intense = save_iamge(user_image,r,g,b,"eyeshadow",0.7)
                 predict_result_medium = save_iamge(user_image,r,g,b,"eyeshadow",0.5)
