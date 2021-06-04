@@ -74,7 +74,7 @@ def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
 
-        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, 0.5))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
     # Globals.concealer.crops = crops
@@ -92,7 +92,7 @@ def concealer_worker_static(image, r, g, b, intensity, out_queue) -> None:
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.concealer.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x]
-        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, 0.5))
 
     out_queue.append({
         'index': 4,
@@ -122,7 +122,7 @@ def blush_worker(image, r, g, b, intensity, out_queue) -> None:
         
         crop = image[top_y:bottom_y, top_x:bottom_x, ]
 
-        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, 0.5))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
     # Globals.blush.crops = crops
@@ -140,7 +140,7 @@ def blush_worker_static(image, r, g, b, intensity, out_queue) -> None:
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.blush.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x]
-        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, 0.5))
 
     out_queue.append({
         'index': 3,
@@ -160,7 +160,7 @@ def lipstick_worker(image, r, g, b, intensity, gloss, out_queue) -> None:
             roi_x.append(Globals.idx_to_coordinates[point][0])
             roi_y.append(Globals.idx_to_coordinates[point][1])
 
-        margin = 2
+        margin = 4
         top_x = min(roi_x)-margin
         top_y = min(roi_y)-margin
         bottom_x = max(roi_x)+margin
@@ -172,7 +172,7 @@ def lipstick_worker(image, r, g, b, intensity, gloss, out_queue) -> None:
         if gloss:
             crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
+        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 21, 7))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
     # Globals.lipstick.crops = crops
@@ -193,7 +193,7 @@ def lisptick_worker_static(image, r, g, b, intensity, gloss, out_queue) -> None:
         if gloss:
            crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
+        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 21, 7))
 
     out_queue.append({
         'index': 0,
@@ -223,7 +223,7 @@ def eyeshadow_worker(image, r, g, b, intensity, out_queue) -> None:
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
+        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 31, 15))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
     # Globals.eyeshadow.crops = crops
@@ -242,7 +242,7 @@ def eyeshadow_worker_static(image, r, g, b, intensity, out_queue) -> None:
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.eyeshadow.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x,]
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
+        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 31, 15))
 
     out_queue.append({
         'index': 1,
@@ -271,7 +271,7 @@ def eyeliner_worker(image, r, g, b, intensity, out_queue) -> None:
         rr, cc = polygon(roi_x, roi_y)
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, 1.5)
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
@@ -290,7 +290,7 @@ def eyeliner_worker_static(image, r, g, b, intensity, out_queue) -> None:
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.eyeliner.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, 1.5)
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
 
     out_queue.append({
@@ -321,7 +321,7 @@ def foundation_worker(image, r, g, b, intensity) -> ndarray:
         crop = image[top_y:bottom_y, top_x:bottom_x,]
         # crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
         # image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
-        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur_color(crop, cc-top_y ,rr-top_x, b, g, r, intensity)
+        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur_color(crop, cc-top_y ,rr-top_x, b, g, r, 0.3)
 
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
@@ -334,7 +334,7 @@ def foundation_worker_static(image, r, g, b, intensity) -> ndarray:
         crop = image[top_y:bottom_y, top_x:bottom_x,]
         # crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
         # image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
-        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur_color(crop, cc-top_y ,rr-top_x, b, g, r, intensity)
+        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur_color(crop, cc-top_y ,rr-top_x, b, g, r, 0.3)
     
     return image
 
@@ -551,16 +551,16 @@ def apply_makeup():
 
             Globals.prev_frame = gray.copy()
 
-            return image
+            # return image
 
-            # (flag, encodedImage) = cv2.imencode(".jpg", image)
+            (flag, encodedImage) = cv2.imencode(".jpg", image)
             
-            # # ensure the frame was successfully encoded
-            # if not flag:
-            #     continue
-            # # yield the output frame in the byte format
-            # yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
-            #     bytearray(encodedImage) + b'\r\n')
+            # ensure the frame was successfully encoded
+            if not flag:
+                continue
+            # yield the output frame in the byte format
+            yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
+                bytearray(encodedImage) + b'\r\n')
 
 
 def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, gloss=False):
@@ -612,7 +612,7 @@ def disable_makeup(makeup_type):
 
 
 def start_cam():
-    Globals.cap.open(0)
+    Globals.cap.open(1)
 
 def stop_cam():
     Globals.cap.release()

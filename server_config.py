@@ -8,8 +8,8 @@ from flask_jwt_extended import JWTManager
 
 from src.route.simulation import *
 from src.route.eyeshadow import *
-# from src.route.blush import *
-# from src.route.foundation import *
+from src.route.blush import *
+from src.route.foundation import *
 from src.route.lipstick import *
 from src.route.eyeliner import *
 from src.route.concealer import *
@@ -34,8 +34,8 @@ port = int(os.environ.get('PORT', 5000))
 
 app.register_blueprint(simulation)
 app.register_blueprint(eyeshadow)
-# app.register_blueprint(blushr)
-# app.register_blueprint(foundation)
+app.register_blueprint(blush)
+app.register_blueprint(foundation)
 app.register_blueprint(lipstick)
 app.register_blueprint(eyeliner)
 app.register_blueprint(concealer)

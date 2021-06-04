@@ -55,7 +55,7 @@ def simulator_lip():
     r = int(request.form.get('r_value'))
     g = int(request.form.get('g_value'))
     b = int(request.form.get('b_value'))
-    intensities = [0.7, 0.5, 0.3]
+    intensities = [0.6, 0.4, 0.25]
     face_detector = face_detection.FaceDetection(min_detection_confidence=.5)
     face_mesher = face_mesh.FaceMesh(min_detection_confidence=.5, min_tracking_confidence=.5)
 
@@ -119,7 +119,7 @@ def simulator_lip():
 
                     
                     crop = face_crop_copy[top_y:bottom_y, top_x:bottom_x,]
-                    crop_makeup = commons.apply_blur_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+                    crop_makeup = commons.apply_blur_color(crop, cc-top_y,rr-top_x, b, g, r, intensity, 81, 30)
                     face_crop_copy[top_y:bottom_y, top_x:bottom_x] = crop_makeup
                 face_crop_copy = imutils.resize(face_crop_copy, width=face_width)
                 face_c_height, face_c_width, _ = face_crop_copy.shape
