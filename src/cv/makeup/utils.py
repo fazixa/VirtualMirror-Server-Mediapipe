@@ -315,8 +315,9 @@ def foundation_worker(image, r, g, b, intensity) -> ndarray:
         rr, cc = polygon(roi_x, roi_y)
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
+        # crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+        # image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
+        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur_color(crop, cc-top_y ,rr-top_x, b, g, r, intensity)
 
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
@@ -327,8 +328,9 @@ def foundation_worker(image, r, g, b, intensity) -> ndarray:
 def foundation_worker_static(image, r, g, b, intensity) -> ndarray:    
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.foundation.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
+        # crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+        # image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
+        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur_color(crop, cc-top_y ,rr-top_x, b, g, r, intensity)
     
     return image
 

@@ -131,7 +131,27 @@ def apply_blur(image, image2, x, y, gussiankernel, erosionkernel):
     return im_copy
 
 
-def apply_blur_color(image, x, y, r, g, b, intensity):
+def apply_blur_color(image, x, y, r, g, b, intensity, gussiankernel=51, erosionkernel=15):
+
+
+    """
+    applies blur and color on the desired region
+
+    Args:
+        arg1 (image) : input image
+        arg2 (int array) : X cordinates of the desired region
+        arg3 (int array) : Y cordinates of the desired region
+        arg4 : red value of rgb color
+        arg5 : green value of rgb color
+        arg6 : blue value of rgb color
+
+    Returns:
+        the image with the applied clor and blur on the desired region
+
+    Note:
+        this function is used when we need the color to be more faded on the edges of the region, this will give us a more natural look which is used on blush, concelaer and foundation.
+    """
+
     # intensity = 0.8
     # r = 51
     # g = 36
@@ -142,8 +162,8 @@ def apply_blur_color(image, x, y, r, g, b, intensity):
 
     mask[x,y] = 1
 
-    mask = cv2.GaussianBlur(mask, (51, 51), 0) * intensity
-    kernel = np.ones((15, 15), np.uint8)
+    mask = cv2.GaussianBlur(mask, (gussiankernel, gussiankernel), 0) * intensity
+    kernel = np.ones((erosionkernel, erosionkernel), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=1)
     # print(np.array(c_[x_right, y_right])[:, 0])
     val = cv2.cvtColor(image, cv2.COLOR_RGB2LAB).astype(float)
