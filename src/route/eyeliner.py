@@ -1,12 +1,10 @@
 import io
-from skimage import io as skimage_io
 import os
-from flask import Flask, request, send_from_directory, jsonify, Blueprint
+from flask import request, Blueprint
 from flask_cors import cross_origin
 from PIL import Image
 from base64 import encodebytes
 from src.route.json_encode import JSONEncoder
-# from src.cv.simulation.apply_eyeliner import Eyeliner
 from src.cv.makeup import commons, constants
 from mediapipe.python.solutions import face_detection
 from mediapipe.python.solutions import face_mesh
@@ -14,19 +12,16 @@ from skimage.draw import polygon
 
 from src.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
 import cv2
-import time
 import imutils
-from flask import Flask, render_template, url_for, request, Response
-import dlib
-from src.settings import SHAPE_68_PATH
+from flask import Flask, request, Response
 
-eyelinerm = Blueprint('eyeliner', __name__)
+eyeliner = Blueprint('eyeliner', __name__)
 
 
 # This method executes before any API request
 
 
-@eyelinerm.before_request
+@eyeliner.before_request
 def before_request():
     print('Start eyeliner API request')
 
@@ -42,10 +37,9 @@ def get_response_image(image_path):
     return encoded_img
 
 # ------------------------------------ non general
-@eyelinerm.route('/api/makeup/image/eyeliner', methods=['POST'])
+@eyeliner.route('/api/makeup/image/eyeliner', methods=['POST'])
 @cross_origin()
 def simulator_lip():
-    print("eyeeeee")
     # check if the post request has the file part
     if 'user_image' not in request.files:
         return {"detail": "No file found"}, 400
@@ -61,8 +55,7 @@ def simulator_lip():
     r = int(request.form.get('r_value'))
     g = int(request.form.get('g_value'))
     b = int(request.form.get('b_value'))
-    print(r, "hiiiiiiiiiiiiiiiiii")
-
+    intensities = [1.5, 1, 0.6]
     face_detector = face_detection.FaceDetection(min_detection_confidence=.5)
     face_mesher = face_mesh.FaceMesh(min_detection_confidence=.5, min_tracking_confidence=.5)
 
@@ -82,7 +75,9 @@ def simulator_lip():
 
 
         face_crop = user_image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
-
+        face_height, face_width, _ = face_crop.shape
+        face_crop = imutils.resize(face_crop, width=500)
+        
         # image.flags.writeable = False
         results = face_mesher.process(face_crop)
         # image.flags.writeable = True
@@ -104,40 +99,40 @@ def simulator_lip():
 
                     if landmark_px:
                         idx_to_coordinates[idx] = landmark_px
+            result = []
+            for intensity in intensities:
+                face_crop_copy = face_crop.copy()
+                for region in constants.EYELINER:
+                    roi_x = []
+                    roi_y = []
+                    for point in region:
+                        roi_x.append(idx_to_coordinates[point][0])
+                        roi_y.append(idx_to_coordinates[point][1])
+
+                    margin = 10
+                    top_x = min(roi_x)-margin
+                    top_y = min(roi_y)-margin
+                    bottom_x = max(roi_x)+margin
+                    bottom_y = max(roi_y)+margin
+
+                    rr, cc = polygon(roi_x, roi_y)
+
+                    
+                    crop = face_crop_copy[top_y:bottom_y, top_x:bottom_x,]
+                    crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+                    crop_makeup = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
+                    face_crop_copy[top_y:bottom_y, top_x:bottom_x] = crop_makeup
+                face_crop_copy = imutils.resize(face_crop_copy, width=face_width)
+                face_c_height, face_c_width, _ = face_crop_copy.shape
+                user_image[f_ymin:f_ymin+face_c_height, f_xmin:f_xmin+f_width] = face_crop_copy
+
+                predict_result = save_iamge(user_image,r,g,b,"eyeliner",intensity)
+                result.append(predict_result)
 
 
-            for region in constants.EYELINER:
-                roi_x = []
-                roi_y = []
-                for point in region:
-                    roi_x.append(idx_to_coordinates[point][0])
-                    roi_y.append(idx_to_coordinates[point][1])
-
-                margin = 10
-                top_x = min(roi_x)-margin
-                top_y = min(roi_y)-margin
-                bottom_x = max(roi_x)+margin
-                bottom_y = max(roi_y)+margin
-
-                rr, cc = polygon(roi_x, roi_y)
-                
-                crop = face_crop[top_y:bottom_y, top_x:bottom_x,]
-                crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, r, g, b, 0.7)
-                crop_makeup = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
-                face_crop[top_y:bottom_y, top_x:bottom_x] = crop_makeup
-
-                user_image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = face_crop
-
-            predict_result_intense = save_iamge(user_image,r,g,b,"eyeshadow",0.7)
-            predict_result_medium = save_iamge(user_image,r,g,b,"eyeshadow",0.5)
-            predict_result_fade = save_iamge(user_image,r,g,b,"eyeshadow",0.3)
 
 
 
-
-
-    result = [predict_result_intense,
-              predict_result_medium, predict_result_fade]
     encoded_img = []
     for image_path in result:
         encoded_img.append(get_response_image(

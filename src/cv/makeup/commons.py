@@ -75,6 +75,39 @@ def apply_color(image, x, y, r, g, b, intensity):
     return im_copy
 
 
+def moist(image, x,y, white):
+    """  finds all the points fillig the lips
+    Args:
+        param1 : if motion is detected this parameter is the X cordinate of the lower lip otherwise the X cordinates of the previous frame gloss parts must be passed
+        param2 : if motion is detected this parameter is the Y cordinate of the lower lip otherwise the Y cordinates of the previous frame gloss parts must be passed
+        param3 : whether motion is detected
+        param4 : red
+        param5 : green
+        param6 : blue
+
+    Returns:
+        42-element tuple containing
+
+        -  (*array*): X cordinates of the pixels of the lips which must be glossy
+        -  (*array*): Y cordinates of the pixels of the lips which must be glossy
+            
+    Todo:
+        * needs major cleanup
+        
+    """
+    intensitymoist =0.5
+
+    val = color.rgb2lab((image[x, y] / 255.).reshape(len(x), 1, 3)).reshape(len(x), 3)
+    L= mean(val[:, 0])
+    L1, A1, B1 = color.rgb2lab(np.array((white / 255., white / 255., white / 255.)).reshape(1, 1, 3)).reshape(3, )
+    ll = L1 - L
+    length = int(len(x)/4)
+    Li = val[:, 0]
+    light_points = sorted(Li)[-length:]
+    # light_points = sorted(Li)[:length]
+    min_val = min(light_points)
+    max_val = max(light_points)
+
 
 
 def apply_blur(image, image2, x, y, gussiankernel, erosionkernel):
@@ -111,7 +144,7 @@ def apply_blur(image, image2, x, y, gussiankernel, erosionkernel):
     return im_copy
 
 
-def apply_blur_color(image, x, y, r, g, b, intensity):
+def apply_blur_color(image, x, y, r, g, b, intensity, gussiankernel=51, erosionkernel=15):
 
 
     """
@@ -142,8 +175,8 @@ def apply_blur_color(image, x, y, r, g, b, intensity):
 
     mask[x,y] = 1
 
-    mask = cv2.GaussianBlur(mask, (51, 51), 0) * intensity
-    kernel = np.ones((15, 15), np.uint8)
+    mask = cv2.GaussianBlur(mask, (gussiankernel, gussiankernel), 0) * intensity
+    kernel = np.ones((erosionkernel, erosionkernel), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=1)
     # print(np.array(c_[x_right, y_right])[:, 0])
     val = cv2.cvtColor(image, cv2.COLOR_RGB2LAB).astype(float)
