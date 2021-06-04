@@ -172,25 +172,25 @@ def before_request():
 # # -----------------------------------------------------------------
 
 
-# @simulation.route('/api/opencam', methods=['GET'])
-# @cross_origin()
-# def opencam():
-#     mutils.start_cam()
-#     return "Success opening cam", 200
+@simulation.route('/api/opencam', methods=['GET'])
+@cross_origin()
+def opencam():
+    mutils.start_cam()
+    return "Success opening cam", 200
 
 
-# @simulation.route('/api/closecam', methods=['GET'])
-# @cross_origin()
-# def close_cam():
-#     mutils.stop_cam()
-#     return 'Cam closed'
+@simulation.route('/api/closecam', methods=['GET'])
+@cross_origin()
+def close_cam():
+    mutils.stop_cam()
+    return 'Cam closed'
 
 
-# @simulation.route('/api/video_feed', methods=['GET'])
-# @cross_origin()
-# def video_feed():
-#     return Response(mutils.apply_makeup(),
-#                     mimetype="multipart/x-mixed-replace; boundary=frame")
+@simulation.route('/api/video_feed', methods=['GET'])
+@cross_origin()
+def video_feed():
+    return Response(mutils.apply_makeup(),
+                    mimetype="multipart/x-mixed-replace; boundary=frame")
 
 
 @simulation.route('/api/video/<makeup_type>', methods=['POST'])
