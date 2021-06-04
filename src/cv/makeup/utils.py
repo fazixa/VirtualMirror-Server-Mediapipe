@@ -153,7 +153,7 @@ def lipstick_worker(image, r, g, b, intensity, out_queue) -> None:
             roi_x.append(Globals.idx_to_coordinates[point][0])
             roi_y.append(Globals.idx_to_coordinates[point][1])
 
-        margin = 10
+        margin = 2
         top_x = min(roi_x)-margin
         top_y = min(roi_y)-margin
         bottom_x = max(roi_x)+margin
@@ -436,7 +436,7 @@ def apply_makeup():
 
             for contour in cnts: 
                 temp = cv2.contourArea(contour)
-                if temp < 500:  
+                if temp < 300:  
                     continue
                 Globals.motion_detected = True
 
@@ -504,16 +504,16 @@ def apply_makeup():
 
             Globals.prev_frame = gray.copy()
 
-            return image
+            # return image
 
-            # (flag, encodedImage) = cv2.imencode(".jpg", image)
+            (flag, encodedImage) = cv2.imencode(".jpg", image)
             
-            # # ensure the frame was successfully encoded
-            # if not flag:
-            #     continue
-            # # yield the output frame in the byte format
-            # yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
-            #     bytearray(encodedImage) + b'\r\n')
+            # ensure the frame was successfully encoded
+            if not flag:
+                continue
+            # yield the output frame in the byte format
+            yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
+                bytearray(encodedImage) + b'\r\n')
 
 
 def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7):
@@ -565,7 +565,7 @@ def disable_makeup(makeup_type):
 
 
 def start_cam():
-    Globals.cap.open(0)
+    Globals.cap.open(1)
 
 def stop_cam():
     Globals.cap.release()

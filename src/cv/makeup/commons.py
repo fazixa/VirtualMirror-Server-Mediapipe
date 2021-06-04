@@ -77,7 +77,7 @@ def moist(image, x,y, white):
         * needs major cleanup
         
     """
-    intensitymoist =0.2
+    intensitymoist =0.5
 
     val = color.rgb2lab((image[x, y] / 255.).reshape(len(x), 1, 3)).reshape(len(x), 3)
     L= mean(val[:, 0])
