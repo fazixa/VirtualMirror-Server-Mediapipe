@@ -197,7 +197,7 @@ def video_feed():
 @cross_origin()
 def video_eyeshadow(makeup_type):
     print(makeup_type)
-    req_data = request.get_json()
+    req_data = request.get_json(force=True)
     input_args = [
         makeup_type,
         req_data.get('r_value'),
