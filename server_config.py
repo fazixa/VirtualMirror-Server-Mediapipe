@@ -12,7 +12,7 @@ from src.route.eyeshadow import *
 # from src.route.foundation import *
 from src.route.lipstick import *
 from src.route.eyeliner import *
-# from src.route.concealer import *
+from src.route.concealer import *
 
 # Load environment config from .env file
 load_dotenv()
@@ -35,10 +35,10 @@ port = int(os.environ.get('PORT', 5000))
 app.register_blueprint(simulation)
 app.register_blueprint(eyeshadow)
 # app.register_blueprint(blushr)
-# app.register_blueprint(foundationm)
+# app.register_blueprint(foundation)
 app.register_blueprint(lipstick)
 app.register_blueprint(eyeliner)
-# app.register_blueprint(concealerm)
+app.register_blueprint(concealer)
 
 # Start connect to MongoDB
 # DB.init()
