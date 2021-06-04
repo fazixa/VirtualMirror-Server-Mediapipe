@@ -18,8 +18,8 @@ Threading
 .. automodule:: src.cv.makeup.utils
    :members:
 
-Coloring
-=========
+Common Coloring Methods
+=======================
 .. automodule:: src.cv.makeup.commons
    :members:
 

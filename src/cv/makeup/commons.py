@@ -114,8 +114,8 @@ def apply_blur(image, image2, x, y, gussiankernel, erosionkernel):
 def apply_blur_color(image, x, y, r, g, b, intensity):
 
 
-    """  
-    applies blur  on the desired region
+    """
+    applies blur and color on the desired region
 
     Args:
         arg1 (image) : input image
