@@ -33,6 +33,24 @@ def _normalized_to_pixel_coordinates(
 
 
 def apply_color(image, x, y, r, g, b, intensity):
+
+    """  
+    applies color to desired region
+
+    Args:
+        arg1 (image) : input image
+        arg2 (int array) : X cordinates of the desired region that is going be colored
+        arg3 (int array) : Y cordinates of the desired region that is going be colored
+        arg4 (int) : red value of rgb color
+        arg5 (int) : green value of rgb color
+        arg6 (int) : blue value of rgb color
+        arg7 (float) : intensity of the applied color
+
+    Returns:
+        the image with the applied color on the desire area
+
+    """
+
     im_copy = image.copy()
     height, width = image.shape[:2]
 
@@ -57,64 +75,26 @@ def apply_color(image, x, y, r, g, b, intensity):
     return im_copy
 
 
-def moist(image, x,y, white):
-    """  finds all the points fillig the lips
-    Args:
-        param1 : if motion is detected this parameter is the X cordinate of the lower lip otherwise the X cordinates of the previous frame gloss parts must be passed
-        param2 : if motion is detected this parameter is the Y cordinate of the lower lip otherwise the Y cordinates of the previous frame gloss parts must be passed
-        param3 : whether motion is detected
-        param4 : red
-        param5 : green
-        param6 : blue
-
-    Returns:
-        42-element tuple containing
-
-        -  (*array*): X cordinates of the pixels of the lips which must be glossy
-        -  (*array*): Y cordinates of the pixels of the lips which must be glossy
-            
-    Todo:
-        * needs major cleanup
-        
-    """
-    intensitymoist =0.2
-
-    val = color.rgb2lab((image[x, y] / 255.).reshape(len(x), 1, 3)).reshape(len(x), 3)
-    L= mean(val[:, 0])
-    L1, A1, B1 = color.rgb2lab(np.array((white / 255., white / 255., white / 255.)).reshape(1, 1, 3)).reshape(3, )
-    ll = L1 - L
-    length = int(len(x)/4)
-    Li = val[:, 0]
-    light_points = sorted(Li)[-length:]
-    # light_points = sorted(Li)[:length]
-    min_val = min(light_points)
-    max_val = max(light_points)
-
-
-
-    for i in range(len(val[:, 0])):
-        if (val[i, 0] <= max_val and val[i, 0] >=min_val):
-            val[i, 0]+= ll*intensitymoist
-
-
-
-    image2 = image.copy()
-    image2[x, y] = color.lab2rgb(val).reshape(len(x), 3) * 255
-    height, width = image.shape[:2]
-    filter = np.zeros((height, width))
-    filter[x,y] = 1
-    kernel = np.ones((12, 12), np.uint8)
-    filter = cv2.erode(filter, kernel, iterations=1)
-    alpha = np.zeros([height, width, 3], dtype='float64')
-    alpha[:, :, 0] = filter
-    alpha[:, :, 1] = filter
-    alpha[:, :, 2] = filter
-    im_copy = (alpha * image2 + (1 - alpha) *image).astype('uint8')
-    return im_copy
-
 
 
 def apply_blur(image, image2, x, y, gussiankernel, erosionkernel):
+
+    """  
+    applies blur  on the desired region
+
+    Args:
+        arg1 (image) : input image
+        arg2 (image) : input image with applied color on the desired region
+        arg3 (int array) : X cordinates of the desired region
+        arg4 (int array) : Y cordinates of the desired region
+        arg5 (int) : Gussian blur kernel
+        arg6 (int) : erosion kernel
+        arg7 (float) : intensity of the applied color
+
+    Returns:
+        the image with the applied blur on the desired region
+    """
+
     height, width = image.shape[:2]
     filter = np.zeros((height, width))
     filter[x,y] = 1
@@ -132,6 +112,26 @@ def apply_blur(image, image2, x, y, gussiankernel, erosionkernel):
 
 
 def apply_blur_color(image, x, y, r, g, b, intensity):
+
+
+    """  
+    applies blur  on the desired region
+
+    Args:
+        arg1 (image) : input image
+        arg2 (int array) : X cordinates of the desired region
+        arg3 (int array) : Y cordinates of the desired region
+        arg4 : red value of rgb color
+        arg5 : green value of rgb color
+        arg6 : blue value of rgb color
+
+    Returns:
+        the image with the applied clor and blur on the desired region
+
+    Note:
+        this function is used when we need the color to be more faded on the edges of the region, this will give us a more natural look which is used on blush, concelaer and foundation.
+    """
+
     # intensity = 0.8
     # r = 51
     # g = 36
@@ -166,4 +166,53 @@ def apply_blur_color(image, x, y, r, g, b, intensity):
 
     image = (color.lab2rgb(val) * 255).astype(np.uint8)
     return image
+
+def moist(image, x,y, white):
+    """  
+    applies gloss texture on the lips
+
+    Args:
+        arg1 (image) : input image
+        arg2 (int array) : X cordinates of the lips
+        arg3 (int array) : Y cordinates of the lips
+        arg4 : a value betwwen 0 to 255 (the higher this value th more white glossy texture will be )
+
+    Returns:
+        the image with the applied gloss on the lips
+    """
+
+    intensitymoist =0.2
+
+    val = color.rgb2lab((image[x, y] / 255.).reshape(len(x), 1, 3)).reshape(len(x), 3)
+    L= mean(val[:, 0])
+    L1, A1, B1 = color.rgb2lab(np.array((white / 255., white / 255., white / 255.)).reshape(1, 1, 3)).reshape(3, )
+    ll = L1 - L
+    length = int(len(x)/4)
+    Li = val[:, 0]
+    light_points = sorted(Li)[-length:]
+    # light_points = sorted(Li)[:length]
+    min_val = min(light_points)
+    max_val = max(light_points)
+
+
+
+    for i in range(len(val[:, 0])):
+        if (val[i, 0] <= max_val and val[i, 0] >=min_val):
+            val[i, 0]+= ll*intensitymoist
+
+
+
+    image2 = image.copy()
+    image2[x, y] = color.lab2rgb(val).reshape(len(x), 3) * 255
+    height, width = image.shape[:2]
+    filter = np.zeros((height, width))
+    filter[x,y] = 1
+    kernel = np.ones((12, 12), np.uint8)
+    filter = cv2.erode(filter, kernel, iterations=1)
+    alpha = np.zeros([height, width, 3], dtype='float64')
+    alpha[:, :, 0] = filter
+    alpha[:, :, 1] = filter
+    alpha[:, :, 2] = filter
+    im_copy = (alpha * image2 + (1 - alpha) *image).astype('uint8')
+    return im_copy
 

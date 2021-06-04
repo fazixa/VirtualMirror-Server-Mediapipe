@@ -19,6 +19,11 @@ Threading
 .. automodule:: src.cv.makeup.utils
    :members:
 
+Coloring
+=========
+.. automodule:: src.cv.makeup.commons
+   :members:
+
 Indices and tables
 ==================
 
