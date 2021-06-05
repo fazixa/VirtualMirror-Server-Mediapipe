@@ -21,7 +21,12 @@ let closeCam = () => {
 }
 
 let blush = () => {
-    axios.get('/blush')
+    axios.post('/enable/blush', {
+        r_value: 74,
+        g_value: 136,
+        b_value: 237,
+        intensity: 0.3
+    })
         .then(res => {
             console.log(res)
         })
@@ -31,7 +36,12 @@ let blush = () => {
 }
 
 let eyeshadow = () => {
-    axios.get('/eyeshadow')
+    axios.post('/enable/eyeshadow', {
+        r_value: 74,
+        g_value: 136,
+        b_value: 237,
+        intensity: 0.3
+    })
         .then(res => {
             console.log(res)
         })
@@ -41,7 +51,12 @@ let eyeshadow = () => {
 }
 
 let lipstick = () => {
-    axios.get('/lipstick')
+    axios.post('/enable/lipstick', {
+        r_value: 74,
+        g_value: 136,
+        b_value: 237,
+        intensity: 0.3
+    })
         .then(res => {
             console.log(res)
         })
