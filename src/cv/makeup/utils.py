@@ -485,9 +485,10 @@ def apply_makeup():
                         Globals.f_width = f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
                         Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
 
-                    if f_xmin < 0 or f_ymin < 0:
-                        print('Face outside of camera view, please move inside')
-                        continue
+                    if f_xmin < 0:
+                        Globals.f_xmin = f_xmin = 0
+                    elif f_ymin < 0:
+                        Globals.f_ymin = f_ymin = 0
 
                     face_crop = image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
 

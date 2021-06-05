@@ -66,12 +66,14 @@ def simulator_lip():
     if results.detections:
         for detection in results.detections:
             f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
-            f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
+            f_ymin = int((detection.location_data.relative_bounding_box.ymin - .3) * im_height)
             f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
             f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
 
-        if f_xmin < 0 or f_ymin < 0:
-             return {"detail": "No face found"}, 400
+        if f_xmin < 0:
+            f_xmin = 0
+        elif f_ymin < 0:
+            f_ymin = 0
 
 
         face_crop = user_image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
