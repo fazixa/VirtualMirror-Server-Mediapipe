@@ -85,14 +85,13 @@ def simulator_lip():
         iris_recoloring.recolor_iris(img, left_eye_results, iris_color=(r, g, b))
         iris_recoloring.recolor_iris(img, right_eye_results, iris_color=(r, g, b))
 
-        img = np.array(img)
+        img = np.array(img)[:, :, ::-1]
     else:
         print('no face detected :(')
 
     result = []
-    predict_result = save_iamge(img,r,g,b,"eyeliner", 1)
-    result.append(predict_result)
-
+    predict_result = save_iamge(img,r,g,b,"lens", 1)
+    [result.append(predict_result) for _ in range(3)]
 
     encoded_img = []
     for image_path in result:
