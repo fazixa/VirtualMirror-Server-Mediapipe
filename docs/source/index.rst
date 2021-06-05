@@ -19,6 +19,13 @@ Common Coloring Methods
 .. automodule:: src.cv.makeup.commons
    :members:
 
+Constants
+=======================
+This scripts holds the constant point indexes for each of the face components.
+
+.. automodule:: src.cv.makeup.constants
+   :members:
+
 Utils
 =========
 This script includes:
@@ -27,6 +34,14 @@ This script includes:
 
 .. automodule:: src.cv.makeup.utils
    :members:
+
+Appendix
+==========
+.. figure:: _static/absolute_diff.png
+   :align: center
+   :figwidth: 300px
+
+   This picture shows the result of absolute differences calculated for a frame in motion detecion part of :py:meth:`apply_makeup`.
    
 Indices and tables
 ==================
