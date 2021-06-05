@@ -204,6 +204,7 @@ def video_eyeshadow(makeup_type):
         int(req_data.get('g_value')) if req_data.get('g_value') is not None else None,
         int(req_data.get('b_value')) if req_data.get('b_value') is not None else None,
         float(req_data.get('intensity')) if req_data.get('intensity') is not None else None,
+        bool(req_data.get('gloss')) if req_data.get('gloss') is not None else None,
         # req_data.get('l_type'),
         # req_data.get('gloss'),
         # req_data.get('k_h'),

@@ -1,28 +1,27 @@
 import io
-from skimage import io as skimage_io
 import os
-from flask import Flask, request, send_from_directory, jsonify, Blueprint
+from flask import request, Blueprint
 from flask_cors import cross_origin
 from PIL import Image
 from base64 import encodebytes
-# from src.tints.utils.json_encode import JSONEncoder
-from src.cv.simulation.apply_lipstick import Lipstick
+from src.route.json_encode import JSONEncoder
+from src.cv.makeup import commons, constants
+from mediapipe.python.solutions import face_detection
+from mediapipe.python.solutions import face_mesh
+from skimage.draw import polygon
+
 from src.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
 import cv2
-import time
 import imutils
-from flask import Flask, render_template, url_for, request, Response
-import dlib
-from src.settings import SHAPE_68_PATH
+from flask import Flask, request, Response
 
-lipstickm = Blueprint('lipstickm', __name__)
+lipstick = Blueprint('lipstick', __name__)
 
-detector = dlib.get_frontal_face_detector()
-face_pose_predictor = dlib.shape_predictor(SHAPE_68_PATH)
+
 # This method executes before any API request
 
 
-@lipstickm.before_request
+@lipstick.before_request
 def before_request():
     print('Start lipstick API request')
 
@@ -38,7 +37,7 @@ def get_response_image(image_path):
     return encoded_img
 
 # ------------------------------------ non general
-@lipstickm.route('/api/makeup/image/lipstick', methods=['POST'])
+@lipstick.route('/api/makeup/image/lipstick', methods=['POST'])
 @cross_origin()
 def simulator_lip():
     # check if the post request has the file part
@@ -50,83 +49,101 @@ def simulator_lip():
     user_id = request.form.get('user_id')
     image_copy_name = 'simulated_image-{}.jpg'.format(str(user_id))
     user_image.save(os.path.join(SIMULATOR_INPUT, image_copy_name))
-    user_image = skimage_io.imread(os.path.join(SIMULATOR_INPUT, image_copy_name))
-    detected_faces = detector(user_image, 0)
-    pose_landmarks = face_pose_predictor(user_image, detected_faces[0])
-
-    landmarks_x = []
-    landmarks_y = []
-    padding =50
-    face_resized_width = 250
-
-
-    for face in detected_faces:
-        x1 = face.left()
-        y1 = face.top()
-        x2 = face.right()
-        y2 = face.bottom()
-
-        height, width = user_image.shape[:2]
-        orignal_face_width = x2-x1
-        ratio = face_resized_width / orignal_face_width
-        new_padding = int(padding / ratio)
-        # new_padding_up = int(padding_up/ratio)
-        new_y1= max(y1-new_padding,0)
-        new_y2= min(y2+new_padding,height)
-        new_x1= max(x1-new_padding,0)
-        new_x2= min(x2+new_padding,width)
-        cropped_img = user_image[ new_y1:new_y2, new_x1:new_x2]
-        cropped_img = imutils.resize(cropped_img, width = (face_resized_width+2*padding))
-
-        for i in range(68):
-            landmarks_x.append(int(((pose_landmarks.part(i).x)-new_x1)*ratio))
-            landmarks_y.append(int(((pose_landmarks.part(i).y)-new_y1)*ratio))
-
-    r_value = request.form.get('r_value')
-    g_value = request.form.get('g_value')
-    b_value = request.form.get('b_value')
-    print(request.form.get('gloss'))
+    user_image = cv2.imread(os.path.join(SIMULATOR_INPUT, image_copy_name))
     
+
+    r = int(request.form.get('r_value'))
+    g = int(request.form.get('g_value'))
+    b = int(request.form.get('b_value'))
     gloss = request.form.get('gloss')
     if(gloss == 'true'):
         gloss = True
     else:
         gloss = False
     print(gloss)
-    l_type = request.form.get('l_type')
 
-    print(gloss, l_type)
-    lip_makeup = Lipstick()
+    intensities = [0.7, 0.5, 0.3]
+    face_detector = face_detection.FaceDetection(min_detection_confidence=.5)
+    face_mesher = face_mesh.FaceMesh(min_detection_confidence=.5, min_tracking_confidence=.5)
+
+    results = face_detector.process(user_image)
+
+    im_height, im_width = user_image.shape[:2]
     
-    img = lip_makeup.apply_lipstick(
-        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value, 0.9, l_type, gloss)
-    img = imutils.resize(img, width=new_x2-new_x1)
-    cheight, cwidth = img.shape[:2]
-    user_image_copy = user_image.copy()
-    user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
-    user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
-    predict_result_intense = save_iamge(user_image_copy,r_value,g_value,b_value,"lip",0.9)
+    if results.detections:
+        for detection in results.detections:
+            f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
+            f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
+            f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
+            f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
 
-    img = lip_makeup.apply_lipstick(
-        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value, 0.7, l_type, gloss)
-    img = imutils.resize(img, width=new_x2-new_x1)
-    cheight, cwidth = img.shape[:2]
-    user_image_copy = user_image.copy()
-    user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
-    user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
-    predict_result_medium = save_iamge(user_image_copy,r_value,g_value,b_value,"lip",0.7)
+        if f_xmin < 0:
+            f_xmin = 0
+        elif f_ymin < 0:
+            f_ymin = 0
 
-    img = lip_makeup.apply_lipstick(
-        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,0.5, l_type, gloss)
-    img = imutils.resize(img, width=new_x2-new_x1)
-    cheight, cwidth = img.shape[:2]
-    user_image_copy = user_image.copy()
-    user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
-    user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
-    predict_result_fade = save_iamge(user_image_copy,r_value,g_value,b_value,"lip",0.5)
 
-    result = [predict_result_intense,
-              predict_result_medium, predict_result_fade]
+        face_crop = user_image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
+        face_height, face_width, _ = face_crop.shape
+        face_crop = imutils.resize(face_crop, width=500)
+        
+        # image.flags.writeable = False
+        results = face_mesher.process(face_crop)
+        # image.flags.writeable = True
+
+        if results.multi_face_landmarks:
+            for landmark_list in results.multi_face_landmarks:
+    
+                image_rows, image_cols, _ = face_crop.shape
+                idx_to_coordinates = {}
+                for idx, landmark in enumerate(landmark_list.landmark):
+                    
+                    if ((landmark.HasField('visibility') and
+                        landmark.visibility < constants.VISIBILITY_THRESHOLD) or
+                        (landmark.HasField('presence') and
+                        landmark.presence < constants.PRESENCE_THRESHOLD)):
+                        continue
+                    landmark_px = commons._normalized_to_pixel_coordinates(landmark.x, landmark.y,
+                                                                image_cols, image_rows)
+
+                    if landmark_px:
+                        idx_to_coordinates[idx] = landmark_px
+            result = []
+            for intensity in intensities:
+                face_crop_copy = face_crop.copy()
+                for region in constants.LIPS:
+                    roi_x = []
+                    roi_y = []
+                    for point in region:
+                        roi_x.append(idx_to_coordinates[point][0])
+                        roi_y.append(idx_to_coordinates[point][1])
+
+                    margin = 10
+                    top_x = min(roi_x)-margin
+                    top_y = min(roi_y)-margin
+                    bottom_x = max(roi_x)+margin
+                    bottom_y = max(roi_y)+margin
+
+                    rr, cc = polygon(roi_x, roi_y)
+
+                    
+                    crop = face_crop_copy[top_y:bottom_y, top_x:bottom_x,]
+                    if gloss:
+                        crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
+                    crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+                    crop_makeup = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 31, 10)
+                    face_crop_copy[top_y:bottom_y, top_x:bottom_x] = crop_makeup
+                face_crop_copy = imutils.resize(face_crop_copy, width=face_width)
+                face_c_height, face_c_width, _ = face_crop_copy.shape
+                user_image[f_ymin:f_ymin+face_c_height, f_xmin:f_xmin+f_width] = face_crop_copy
+
+                predict_result = save_iamge(user_image,r,g,b,"lipstick",intensity)
+                result.append(predict_result)
+
+
+
+
+
     encoded_img = []
     for image_path in result:
         encoded_img.append(get_response_image(

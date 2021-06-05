@@ -3,19 +3,56 @@ from numpy import ndarray
 from skimage.draw import polygon
 from mediapipe.python.solutions import face_detection
 from mediapipe.python.solutions import face_mesh
+import traceback
 
 from src.cv.makeup import commons, constants
+from src.cv.simulation.apply_lens import Lens
 
 mp_face_mesh = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
 
 
 class Makeup_Worker:
-    def __init__(self, result=None, bounds=None) -> None:
-        self.crops = result
+    """Defines a makeup worker instance
+
+    Args:
+        arg1 (list): list of the bounds related to the makeup worker, it's assigned in normal worker functions and used in static worker functions
+        arg2 (class): an instance of the related makeup worker, in case it exists (E.g. Lens)
+
+    """
+    def __init__(self, bounds=None, instance=None) -> None:
         self.bounds = bounds
+        self.instance = instance() if instance is not None else None
+
 
 class Globals:
+    """Holds global values that are used by static workers and other functions
+
+    Properties:
+        :cap: Video captured from webcam, can be closed and open upon request
+        :face_detector: Instance of MediaPipe face_detection module
+        :face_mesher: Instance of MediaPipe face_mesh module
+        :makeup_workers: Dictionary of the makeup workers and their related information
+        :makeup args: parameter names that are given to makeup workers, used in the api designed for this purpose
+        :makeup instances:
+            - lens
+            - eyeliner
+            - eyeshadow
+            - blush
+            - lipstick
+            - foundation
+            - concealer
+        :motion detection variables:
+            - **prev_frame**: holds the previos frame for comparing with the current frame
+            - **motion detected** (bool): True if motion detected, False otherwise, starts with True
+            - **f_xmin**: minimum x value among points of face crop
+            - **f_ymin**: minimum y value among points of face crop
+            - **f_width**: width of the face crop
+            - **f_height**: height of the face crop
+        :idx_to_coordinates: holds to coordinates calculated by turning face mesh index points to real coordinates in given image of face
+        :output_frame: holds the given image without any change for using in static function or in special conditions
+    """
+
     cap = cv2.VideoCapture()
     face_detector = face_detection.FaceDetection(min_detection_confidence=.5)
     face_mesher = face_mesh.FaceMesh(min_detection_confidence=.5, min_tracking_confidence=.5)
@@ -27,6 +64,7 @@ class Globals:
     concealer   = Makeup_Worker()
     eyeshadow   = Makeup_Worker()
     foundation  = Makeup_Worker()
+    lens        = Makeup_Worker(instance=Lens)
 
     #### Motion Detection Vars ####
     prev_frame = None
@@ -42,11 +80,27 @@ class Globals:
 
     idx_to_coordinates = []
     output_frame = None
+    # face_resize_width = 500
+
 
 
 ############################################################## WORKERS #################################################################
 
 def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies a concealer effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
     bounds = []
 
@@ -67,7 +121,7 @@ def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
 
-        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, 0.5))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
     # Globals.concealer.crops = crops
@@ -81,11 +135,25 @@ def concealer_worker(image, r, g, b, intensity, out_queue) -> None:
 
 
 def concealer_worker_static(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies a concealer effect on an input image
+    with the calculated boundaries in the normal worker function.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
     crops = []
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.concealer.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x]
-        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, 0.5))
 
     out_queue.append({
         'index': 4,
@@ -95,6 +163,20 @@ def concealer_worker_static(image, r, g, b, intensity, out_queue) -> None:
 
 
 def blush_worker(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies a blush effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+    
     crops = []
     bounds = []
 
@@ -115,7 +197,7 @@ def blush_worker(image, r, g, b, intensity, out_queue) -> None:
         
         crop = image[top_y:bottom_y, top_x:bottom_x, ]
 
-        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, 0.5))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
     # Globals.blush.crops = crops
@@ -129,20 +211,49 @@ def blush_worker(image, r, g, b, intensity, out_queue) -> None:
 
 
 def blush_worker_static(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies a blush effect on an input image
+    with the calculated boundaries in the normal worker function.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.blush.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x]
-        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, intensity))
+        crops.append(commons.apply_blur_color(crop, cc-top_y, rr-top_x, b, g, r, 0.5))
 
     out_queue.append({
-        'index': 4,
+        'index': 3,
         'crops': crops,
         'bounds': Globals.blush.bounds
     })
 
 
-def lipstick_worker(image, r, g, b, intensity, out_queue) -> None:
+def lipstick_worker(image, r, g, b, intensity, gloss, out_queue) -> None:
+    """This function applies a lipstick effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
     bounds = []
 
@@ -153,7 +264,7 @@ def lipstick_worker(image, r, g, b, intensity, out_queue) -> None:
             roi_x.append(Globals.idx_to_coordinates[point][0])
             roi_y.append(Globals.idx_to_coordinates[point][1])
 
-        margin = 10
+        margin = 4
         top_x = min(roi_x)-margin
         top_y = min(roi_y)-margin
         bottom_x = max(roi_x)+margin
@@ -162,9 +273,10 @@ def lipstick_worker(image, r, g, b, intensity, out_queue) -> None:
         rr, cc = polygon(roi_x, roi_y)
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
+        if gloss:
+            crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
+        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 21, 7))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
     # Globals.lipstick.crops = crops
@@ -177,23 +289,53 @@ def lipstick_worker(image, r, g, b, intensity, out_queue) -> None:
     })
 
 
-def lisptick_worker_static(image, r, g, b, intensity, out_queue) -> None:
+def lisptick_worker_static(image, r, g, b, intensity, gloss, out_queue) -> None:
+    """This function applies a lipstick effect on an input image
+    with the calculated boundaries in the normal worker function.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.lipstick.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
+        if gloss:
+           crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
+        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 21, 7))
 
     out_queue.append({
-        'index': 4,
+        'index': 0,
         'crops': crops,
         'bounds': Globals.lipstick.bounds
     })
 
 
 def eyeshadow_worker(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies an eyeshadow effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
     bounds = []
 
@@ -214,35 +356,64 @@ def eyeshadow_worker(image, r, g, b, intensity, out_queue) -> None:
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
+        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 31, 15))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
     # Globals.eyeshadow.crops = crops
     Globals.eyeshadow.bounds = bounds
 
     out_queue.append({
-        'index': 2,
+        'index': 1,
         'crops': crops,
         'bounds': bounds
     })
 
 
 def eyeshadow_worker_static(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies a eyeshadow effect on an input image
+    with the calculated boundaries in the normal worker function.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.eyeshadow.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x,]
         crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
+        crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 31, 15))
 
     out_queue.append({
-        'index': 4,
+        'index': 1,
         'crops': crops,
         'bounds': Globals.eyeshadow.bounds
     })
 
 
 def eyeliner_worker(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies an eyeliner effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
     bounds = []
 
@@ -262,7 +433,7 @@ def eyeliner_worker(image, r, g, b, intensity, out_queue) -> None:
         rr, cc = polygon(roi_x, roi_y)
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, 1.5)
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
         bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
 
@@ -270,28 +441,62 @@ def eyeliner_worker(image, r, g, b, intensity, out_queue) -> None:
     Globals.eyeliner.bounds = bounds
 
     out_queue.append({
-        'index': 1,
+        'index': 2,
         'crops': crops,
         'bounds': bounds
     })
 
 
 def eyeliner_worker_static(image, r, g, b, intensity, out_queue) -> None:
+    """This function applies a eyeliner effect on an input image
+    with the calculated boundaries in the normal worker function.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        arg6 (list)     : shared list for appending the output
+        
+    """
+
     crops = []
 
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.eyeliner.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, 1.5)
         crops.append(commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5))
 
     out_queue.append({
-        'index': 4,
+        'index': 2,
         'crops': crops,
         'bounds': Globals.eyeliner.bounds
     })
 
 
 def foundation_worker(image, r, g, b, intensity) -> ndarray:
+    """This function applies a foundation effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        
+    Returns:
+        ndarray: The given image with the foundation effect applied on it, this image will be
+        used as an input to other activated makeup workers in order for them to apply their effect
+        on this image.
+    """
+
+    bounds = []
+
     for region in constants.FOUNDATION:
         roi_x = []
         roi_y = []
@@ -308,40 +513,129 @@ def foundation_worker(image, r, g, b, intensity) -> ndarray:
         rr, cc = polygon(roi_x, roi_y)
         
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
+        # crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+        # image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
+        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur_color(crop, cc-top_y ,rr-top_x, b, g, r, 0.3)
+
+        bounds.append([rr, cc, top_x, top_y, bottom_x, bottom_y])
+
+    Globals.foundation.bounds = bounds
 
     return image
 
-def foundation_worker_static(image, r, g, b, intensity) -> ndarray:    
+def foundation_worker_static(image, r, g, b, intensity) -> ndarray:
+    """This function applies a foundation effect on an input image
+    with the calculated boundaries in the normal worker function.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        
+    Returns:
+        ndarray: The given image with the foundation effect applied on it, this image will be
+        used as an input to other activated makeup workers in order for them to apply their effect
+        on this image.
+    """
+
     for [rr, cc, top_x, top_y, bottom_x, bottom_y] in Globals.foundation.bounds:
         crop = image[top_y:bottom_y, top_x:bottom_x,]
-        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
-        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
+        # crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+        # image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)
+        image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur_color(crop, cc-top_y ,rr-top_x, b, g, r, 0.3)
     
     return image
+
+
+def lens_worker(image, r, g, b, intensity) -> ndarray:
+    """This function applies a contact lens effect on an input image.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        
+    Returns:
+        ndarray: The given image with the contact effect applied on it, this image will be
+        used as an input to other activated makeup workers in order for them to apply their effect
+        on this image.
+    """
+
+    return Globals.lens.instance.apply_lens(image, r, g, b)
+
+def lens_worker_static(image, r, g, b, intensity) -> ndarray:
+    """This function applies a contact lens effect on an input image
+    with the calculated boundaries in the normal worker function.
+    This function is called by a threading function and its output
+    is appended to a given list to be processed later.
+
+    Args:
+        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+        arg2 (int)      : rgb value of red color 
+        arg3 (int)      : rgb value of green color 
+        arg4 (int)      : rgb value of blue color
+        arg5 (float)    : intensity of the applied makeup
+        
+    Returns:
+        ndarray: The given image with the contact lens effect applied on it, this image will be
+        used as an input to other activated makeup workers in order for them to apply their effect
+        on this image.
+    """
+    
+    return Globals.lens.instance.apply_lens_static(image, r, g, b)
 
 
 ####################################################################################################################################
 
 
 Globals.makeup_workers = {
-    # 'lens_worker':          { 'function': lens_worker,          'instance': Globals.lens,       'args': [], 'enabled': False },
+    'lens_worker':          { 'function': lens_worker,          'static_function': lens_worker_static,       'args': [], 'enabled': False, 'enabled_first': False},
     'lipstick_worker':      { 'function': lipstick_worker,      'static_function': lisptick_worker_static,   'args': [], 'enabled': False },
-    'eyeliner_worker':      { 'function': eyeliner_worker,      'static_function': eyeliner_worker_static,   'args': [], 'enabled': False },
     'eyeshadow_worker':     { 'function': eyeshadow_worker,     'static_function': eyeshadow_worker_static,  'args': [], 'enabled': False },
+    'eyeliner_worker':      { 'function': eyeliner_worker,      'static_function': eyeliner_worker_static,   'args': [], 'enabled': False },
     'blush_worker':         { 'function': blush_worker,         'static_function': blush_worker_static,      'args': [], 'enabled': False },
     'concealer_worker':     { 'function': concealer_worker,     'static_function': concealer_worker_static,  'args': [], 'enabled': False },
     'foundation_worker':    { 'function': foundation_worker,    'static_function': foundation_worker_static, 'args': [], 'enabled': False, 'enabled_first': False },
 }
 
 
-def join_makeup_workers(image):
+def join_makeup_workers(image) -> ndarray:
+    """Calls all the enabled makeup workers to produce their results on the given image.
+    If enabled, lens and foundation workers are called beforehand and their results are given to other workers.
+
+    Args:
+        arg1 (ndarray): The face crop given to apply makeup filters on
+    
+    Returns:
+        ndarray: The face crop with requested filters applied on
+
+    How it works:
+        #. Create a list to keep threads and another list to use as shared memory between the threads
+        #. Check if foundation and lens worker are enabled, if so, apply them sequentially, this is to prevent merging issues with other workers' results
+        #. Iterate over makeup workers and start a thread for any one of them that is active, the arguments for each function is based on its own details. Also, the shared list is also passed to the target function
+        #. Threads are added to the threads list and after creation, they are started and joined to finish with each other
+        #. The shared list which now holds the results of all the worker functions is sorted by the index of each worker to create proper layering of filters
+        #. Makeup filters are applied to the proper area one by one in the order of their predecence
+
+    """
+
+
     threads = []
     shared_list = []
 
     if Globals.makeup_workers['foundation_worker']['enabled_first']:
         image = foundation_worker(image, *Globals.makeup_workers['foundation_worker']['args'])
+
+    if Globals.makeup_workers['lens_worker']['enabled_first']:
+        image = lens_worker(image, *Globals.makeup_workers['lens_worker']['args'])
 
     for makeup_worker in Globals.makeup_workers:
         worker = Globals.makeup_workers[makeup_worker]
@@ -370,12 +664,30 @@ def join_makeup_workers(image):
     return image
 
 
-def join_makeup_workers_static(image):
+def join_makeup_workers_static(image) -> ndarray:
+    """Calls all the enabled makeup workers to produce their results on the given image without calculating the bounds.
+    Only static methods are called in this function so the bounds that were calculated in the previous frame are used.
+    If enabled, lens and foundation workers are called beforehand and their results are given to other workers.
+
+    Args:
+        arg1 (ndarray): The face crop given to apply makeup filters on
+    
+    Returns:
+        ndarray: The face crop with requested filters applied on
+
+    How it works:
+        The procedure is the same as :py:meth:`join_makeup_workers`, with the exception that in this method, static makeup workers are called.
+
+    """
+
     threads = []
     shared_list = []
 
     if Globals.makeup_workers['foundation_worker']['enabled_first']:
         image = foundation_worker_static(image, *Globals.makeup_workers['foundation_worker']['args'])
+
+    if Globals.makeup_workers['lens_worker']['enabled_first']:
+        image = lens_worker_static(image, *Globals.makeup_workers['lens_worker']['args'])
 
     for makeup_worker in Globals.makeup_workers:
         worker = Globals.makeup_workers[makeup_worker]
@@ -405,125 +717,190 @@ def join_makeup_workers_static(image):
 
 
 def apply_makeup():
-        while Globals.cap.isOpened():
-            success, image = Globals.cap.read()
-            if not success:
-                print("Ignoring empty camera frame.")
-                continue
+    """Reads a frame from webcam camera and prepares it for the makeup workers to apply their filters on it.
 
-
-            # To improve performance, optionally mark the image as not writeable to
-            # pass by reference.
-            image.flags.writeable = False
-
-            Globals.output_frame = image
-
-            # Flip the image horizontally for a later selfie-view display
-            image = cv2.flip(image, 1)
-
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-            if Globals.prev_frame is None:
-                Globals.prev_frame = gray
-                continue
+    Yields:
+        byte array: The final image is encoded and converted to byte array so that sending it over a REST API is feasible.
     
-            frame_diff = cv2.absdiff(Globals.prev_frame, gray)
+    How it works:
+        #. Preparing the input
+            #. A frame is read from the webcam into an image
+            #. An unchanged copy of the image is saved into the global ``output_frame``
+            #. Image is flipped horizontally so that it is shown appropriately when displayed back to the user
+        #. Motion detection
+            #. A gray version of the image is generated
+            #. If the global ``prev_frame`` has not been initilized, copy the gray image into it and continue
+            #. Calculate the absolute difference between the current frame and the global ``prev_frame``
+            #. Threshold the difference to ignore minor differences
+            #. Dilate the threshold result
+            #. Find contours and calculate the contour area
+            #. If the contour area is more than a certain amount, the global ``motion_detected`` flag will be set to ``True``
+        #. If motion has been detected:
+            #. Process the image with MediaPipe's face detection API, then crop the image with a padding to cover the whole face
+            #. Process the cropped face image with MediaPipe's face mesh API
+            #. Convert the point indexes in :py:mod:`src.cv.makeup.constants` into actual coordinates in the face crop
+            #. Call the joining function by passing the face crop image to it to apply the requested filters
+            #. Placing the face crop in the original image
+        #. If no motion has been detected:
+            #. Crop the image using the boundaries calculated the last time we detected motion
+            #. Call the static joining method by passing the face crop to it to apply the requested filters
+        #. Sending the result:
+            #. Encode the image in the desired extension (here we use ``.jpg``)
+            #. Put the image in a byte array and appending a proper header to be interpreted in the REST API`
 
-            frame_thresh = cv2.threshold(frame_diff, 25, 255, cv2.THRESH_BINARY)[1] 
-            frame_thresh = cv2.dilate(frame_thresh, None, iterations=2)
+    """
 
-            cnts, _ = cv2.findContours(frame_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
+    while Globals.cap.isOpened():
+        success, image = Globals.cap.read()
+        if not success:
+            print("Ignoring empty camera frame.")
+            continue
 
-            for contour in cnts: 
-                temp = cv2.contourArea(contour)
-                if temp < 500:  
-                    continue
-                Globals.motion_detected = True
 
-            if Globals.motion_detected:
-                print('motion detected')
+        # To improve performance, optionally mark the image as not writeable to
+        # pass by reference.
+        image.flags.writeable = False
 
-                results = Globals.face_detector.process(image)
+        Globals.output_frame = image
 
-                im_height, im_width = image.shape[:2]
+        # Flip the image horizontally for a later selfie-view display
+        image = cv2.flip(image, 1)
 
-                if results.detections:
-                    for detection in results.detections:
-                        Globals.f_xmin = f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
-                        Globals.f_ymin = f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
-                        Globals.f_width = f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
-                        Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-                    if f_xmin < 0 or f_ymin < 0:
-                        print('Face outside of camera view, please move insied')
-                        continue
+        if Globals.prev_frame is None:
+            Globals.prev_frame = gray
+            continue
 
-                    face_crop = image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
+        frame_diff = cv2.absdiff(Globals.prev_frame, gray)
 
-                    # image.flags.writeable = False
-                    results = Globals.face_mesher.process(face_crop)
-                    # image.flags.writeable = True
+        frame_thresh = cv2.threshold(frame_diff, 25, 255, cv2.THRESH_BINARY)[1] 
+        frame_thresh = cv2.dilate(frame_thresh, None, iterations=2)
+
+        cnts, _ = cv2.findContours(frame_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
+
+        for contour in cnts: 
+            temp = cv2.contourArea(contour)
+            if temp < 300:  
+                continue
+            Globals.motion_detected = True
+
         
-                    if results.multi_face_landmarks:
-                        for landmark_list in results.multi_face_landmarks:
+        if Globals.motion_detected:
+            print('motion detected')
+
+            results = Globals.face_detector.process(image)
+
+            im_height, im_width = image.shape[:2]
+
+            if results.detections:
+                detection = results.detections[0]
                 
-                            image_rows, image_cols, _ = face_crop.shape
-                            idx_to_coordinates = {}
-                            for idx, landmark in enumerate(landmark_list.landmark):
-                                
-                                if ((landmark.HasField('visibility') and
-                                    landmark.visibility < constants.VISIBILITY_THRESHOLD) or
-                                    (landmark.HasField('presence') and
-                                    landmark.presence < constants.PRESENCE_THRESHOLD)):
-                                    continue
-                                landmark_px = commons._normalized_to_pixel_coordinates(landmark.x, landmark.y,
-                                                                            image_cols, image_rows)
+                Globals.f_xmin = f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
+                Globals.f_ymin = f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
+                Globals.f_width = f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
+                Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
 
-                                if landmark_px:
-                                    idx_to_coordinates[idx] = landmark_px
+                if f_xmin < 0:
+                    Globals.f_xmin = f_xmin = 0
+                elif f_ymin < 0:
+                    Globals.f_ymin = f_ymin = 0
 
-                        Globals.idx_to_coordinates = idx_to_coordinates
+                face_crop = image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
+
+                # crop_height, crop_width = face_crop.shape[:2]
+
+                # face_crop = cv2.resize(face_crop,
+                #             (Globals.face_resize_width, int(crop_height * Globals.face_resize_width / float(crop_width))),
+                #             interpolation=cv2.INTER_AREA)
+
+                # image.flags.writeable = False
+                results = Globals.face_mesher.process(face_crop)
+                # image.flags.writeable = True
+
+                if results.multi_face_landmarks:
+                    for landmark_list in results.multi_face_landmarks:
             
+                        image_rows, image_cols, _ = face_crop.shape
+                        idx_to_coordinates = {}
+                        for idx, landmark in enumerate(landmark_list.landmark):
+                            
+                            if ((landmark.HasField('visibility') and
+                                landmark.visibility < constants.VISIBILITY_THRESHOLD) or
+                                (landmark.HasField('presence') and
+                                landmark.presence < constants.PRESENCE_THRESHOLD)):
+                                continue
+                            landmark_px = commons._normalized_to_pixel_coordinates(landmark.x, landmark.y,
+                                                                        image_cols, image_rows)
 
-                        try:
-                            image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = join_makeup_workers(face_crop)
-                        except Exception as e:
-                            print(e)
+                            if landmark_px:
+                                idx_to_coordinates[idx] = landmark_px
 
-                        Globals.motion_detected = False
+                    Globals.idx_to_coordinates = idx_to_coordinates
+        
 
-            else:
-                print('no motion')
-                face_crop = image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width]
+                    try:
+                        face_crop = join_makeup_workers(face_crop)
+                        # face_crop = cv2.resize(face_crop, (crop_width, crop_height), interpolation=cv2.INTER_AREA)
+                        image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width] = face_crop
+                    except Exception as e:
+                        print(e)
 
-                try:
-                    image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width] = join_makeup_workers_static(face_crop)
-                except Exception as e:
-                    print(e)
+                    
+                    Globals.motion_detected = False
 
-
-            Globals.prev_frame = gray.copy()
-
-            return image
-
-            # (flag, encodedImage) = cv2.imencode(".jpg", image)
+        else:
+            print('no motion')
+            face_crop = image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width]
             
-            # # ensure the frame was successfully encoded
-            # if not flag:
-            #     continue
-            # # yield the output frame in the byte format
-            # yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
-            #     bytearray(encodedImage) + b'\r\n')
+            # crop_height, crop_width = face_crop.shape[:2]
+            # face_crop = cv2.resize(face_crop,
+            #                 (Globals.face_resize_width, int(crop_height * Globals.face_resize_width / float(crop_width))),
+            #                 interpolation=cv2.INTER_AREA)
+
+            try:
+                face_crop = join_makeup_workers_static(face_crop)
+                # face_crop = cv2.resize(face_crop, (crop_width, crop_height), interpolation=cv2.INTER_AREA)
+                image[Globals.f_ymin:Globals.f_ymin+Globals.f_height, Globals.f_xmin:Globals.f_xmin+Globals.f_width] = face_crop
+            except Exception as e:
+                traceback.print_exc()
 
 
-def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7):
+        Globals.prev_frame = gray.copy()
+
+        # return image
+
+        (flag, encodedImage) = cv2.imencode(".jpg", image)
+        
+        # ensure the frame was successfully encoded
+        if not flag:
+            continue
+        # yield the output frame in the byte format
+        yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
+            bytearray(encodedImage) + b'\r\n')
+
+
+def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, gloss=False):
+    """Enables the requested makeup so that the joining methods will be applied it in the next frame.
+    It also passes the received arguments from the API to the corresponding function.
+
+    Args:
+        arg1 (string): name of the makeup, it can be one of:
+            [eyeshadow, lipstick, blush, concealer, foundation, eyeliner, lens]
+        arg2 (int): rgb value of red color 
+        arg3 (int): rgb value of green color 
+        arg4 (int): rgb value of blue color
+        arg5 (float): intensity of the applied makeup
+        arg6 (bool): Determines whethere gloss needs to be applied or not (only for lipstick)
+    """
+
     Globals.motion_detected = True
     
     if makeup_type == 'eyeshadow':
         Globals.makeup_workers['eyeshadow_worker']['args'] = [r, g, b, intensity]
         Globals.makeup_workers['eyeshadow_worker']['enabled'] = True
     elif makeup_type == 'lipstick':
-        Globals.makeup_workers['lipstick_worker']['args'] = [r, g, b, intensity]
+        Globals.makeup_workers['lipstick_worker']['args'] = [r, g, b, intensity, gloss]
         Globals.makeup_workers['lipstick_worker']['enabled'] = True
     elif makeup_type == 'blush':
         Globals.makeup_workers['blush_worker']['args'] = [r, g, b, intensity]
@@ -538,14 +915,22 @@ def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7):
         Globals.makeup_workers['eyeliner_worker']['args'] = [r, g, b, intensity]
         Globals.makeup_workers['eyeliner_worker']['enabled'] = True
     elif makeup_type == 'lens':
-        Globals.makeup_workers['lens_worker']['args'] = [r, g, b]
-        Globals.makeup_workers['lens_worker']['enabled'] = True
+        Globals.makeup_workers['lens_worker']['args'] = [r, g, b, intensity]
+        Globals.makeup_workers['lens_worker']['enabled_first'] = True
 
 
 Globals.makeup_args = enable_makeup.__code__.co_varnames
 
 
 def disable_makeup(makeup_type):
+    """Disables the requested makeup so that the joining methods will not be applied it in the next frame.
+
+    Args:
+        arg1 (string): name of the makeup, it can be one of:
+            [eyeshadow, lipstick, blush, concealer, foundation, eyeliner, lens]
+            
+    """
+    
     Globals.motion_detected = True
 
     if makeup_type == 'eyeshadow':
@@ -557,15 +942,21 @@ def disable_makeup(makeup_type):
     elif makeup_type == 'concealer':
         Globals.makeup_workers['concealer_worker']['enabled'] = False
     elif makeup_type == 'foundation':
-        Globals.makeup_workers['foundation_worker']['enabled_first'] = False
+        Globals.makeup_workers['foundation_worker']['enabled'] = False
     elif makeup_type == 'eyeliner':
         Globals.makeup_workers['eyeliner_worker']['enabled'] = False
     elif makeup_type == 'lens':
-        Globals.makeup_workers['lens_worker']['enabled'] = False
+        Globals.makeup_workers['lens_worker']['enabled_first'] = False
 
 
 def start_cam():
-    Globals.cap.open(0)
+    """Opens the camera with the desired camera index
+    """
+    
+    Globals.cap.open(1)
 
 def stop_cam():
+    """Closes the camera when the user does not want to use the realtime virtual makeup functionality
+    """
+
     Globals.cap.release()
