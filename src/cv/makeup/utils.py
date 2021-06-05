@@ -794,11 +794,12 @@ def apply_makeup():
             im_height, im_width = image.shape[:2]
 
             if results.detections:
-                for detection in results.detections:
-                    Globals.f_xmin = f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
-                    Globals.f_ymin = f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
-                    Globals.f_width = f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
-                    Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
+                detection = results.detections[0]
+                
+                Globals.f_xmin = f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
+                Globals.f_ymin = f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
+                Globals.f_width = f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
+                Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
 
                 if f_xmin < 0:
                     Globals.f_xmin = f_xmin = 0
@@ -816,7 +817,7 @@ def apply_makeup():
                 # image.flags.writeable = False
                 results = Globals.face_mesher.process(face_crop)
                 # image.flags.writeable = True
-    
+
                 if results.multi_face_landmarks:
                     for landmark_list in results.multi_face_landmarks:
             
@@ -867,16 +868,16 @@ def apply_makeup():
 
         Globals.prev_frame = gray.copy()
 
-        # return image
+        return image
 
-        (flag, encodedImage) = cv2.imencode(".jpg", image)
+        # (flag, encodedImage) = cv2.imencode(".jpg", image)
         
-        # ensure the frame was successfully encoded
-        if not flag:
-            continue
-        # yield the output frame in the byte format
-        yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
-            bytearray(encodedImage) + b'\r\n')
+        # # ensure the frame was successfully encoded
+        # if not flag:
+        #     continue
+        # # yield the output frame in the byte format
+        # yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
+        #     bytearray(encodedImage) + b'\r\n')
 
 
 def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, gloss=False):
@@ -952,7 +953,7 @@ def start_cam():
     """Opens the camera with the desired camera index
     """
     
-    Globals.cap.open(2)
+    Globals.cap.open(1)
 
 def stop_cam():
     """Closes the camera when the user does not want to use the realtime virtual makeup functionality
