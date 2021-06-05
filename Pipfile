@@ -48,6 +48,7 @@ Flask = "==1.1.2"
 Jinja2 = "==2.11.3"
 MarkupSafe = "==1.1.1"
 PyJWT = "==2.0.1"
+face-detection-tflite = "*"
 
 [dev-packages]
 
