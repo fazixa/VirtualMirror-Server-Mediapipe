@@ -66,15 +66,14 @@ def simulator_lip():
     if results.detections:
         for detection in results.detections:
             f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
-            f_ymin = int((detection.location_data.relative_bounding_box.ymin - .3) * im_height)
+            f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
             f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
-            f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
+            f_height = int((detection.location_data.relative_bounding_box.height + .35) * im_height)
 
         if f_xmin < 0:
             f_xmin = 0
         elif f_ymin < 0:
             f_ymin = 0
-
 
         face_crop = user_image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
         face_height, face_width, _ = face_crop.shape
@@ -126,6 +125,8 @@ def simulator_lip():
                 face_crop_copy = imutils.resize(face_crop_copy, width=face_width)
                 face_c_height, face_c_width, _ = face_crop_copy.shape
                 user_image[f_ymin:f_ymin+face_c_height, f_xmin:f_xmin+f_width] = face_crop_copy
+
+                cv2.rectangle(user_image, (f_xmin, f_ymin), (f_xmin+f_width, f_ymin+f_height), (200, 20, 20), 2)
 
                 predict_result = save_iamge(user_image,r,g,b,"foundation",intensity)
                 result.append(predict_result)
