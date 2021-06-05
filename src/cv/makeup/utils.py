@@ -479,11 +479,12 @@ def apply_makeup():
                 im_height, im_width = image.shape[:2]
 
                 if results.detections:
-                    for detection in results.detections:
-                        Globals.f_xmin = f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
-                        Globals.f_ymin = f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
-                        Globals.f_width = f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
-                        Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
+                    detection = results.detections[0]
+                    
+                    Globals.f_xmin = f_xmin = int((detection.location_data.relative_bounding_box.xmin - .1) * im_width)
+                    Globals.f_ymin = f_ymin = int((detection.location_data.relative_bounding_box.ymin - .2) * im_height)
+                    Globals.f_width = f_width = int((detection.location_data.relative_bounding_box.width + .2) * im_width)
+                    Globals.f_height = f_height = int((detection.location_data.relative_bounding_box.height + .25) * im_height)
 
                     if f_xmin < 0:
                         Globals.f_xmin = f_xmin = 0
