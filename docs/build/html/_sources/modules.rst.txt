@@ -1,0 +1,9 @@
+VirtualMirror-Server-Mediapipe
+==============================
+
+.. toctree::
+   :maxdepth: 4
+
+   server_config
+   test
+   test_server

@@ -1,0 +1,1158 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>src.cv.makeup.utils &mdash; Virtual Mirror 1.0.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> Virtual Mirror
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Virtual Mirror</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>src.cv.makeup.utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for src.cv.makeup.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">cv2</span><span class="o">,</span> <span class="nn">threading</span><span class="o">,</span> <span class="nn">mediapipe</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">ndarray</span>
+<span class="kn">from</span> <span class="nn">skimage.draw</span> <span class="kn">import</span> <span class="n">polygon</span>
+<span class="kn">from</span> <span class="nn">mediapipe.python.solutions</span> <span class="kn">import</span> <span class="n">face_detection</span>
+<span class="kn">from</span> <span class="nn">mediapipe.python.solutions</span> <span class="kn">import</span> <span class="n">face_mesh</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">from</span> <span class="nn">src.cv.makeup</span> <span class="kn">import</span> <span class="n">commons</span><span class="p">,</span> <span class="n">constants</span>
+<span class="kn">from</span> <span class="nn">src.cv.simulation.apply_lens</span> <span class="kn">import</span> <span class="n">Lens</span>
+
+<span class="n">mp_face_mesh</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">solutions</span><span class="o">.</span><span class="n">face_mesh</span>
+<span class="n">mp_drawing</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">solutions</span><span class="o">.</span><span class="n">drawing_utils</span>
+
+
+<div class="viewcode-block" id="Makeup_Worker"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.Makeup_Worker">[docs]</a><span class="k">class</span> <span class="nc">Makeup_Worker</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Defines a makeup worker instance</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (list): list of the bounds related to the makeup worker, it&#39;s assigned in normal worker functions and used in static worker functions</span>
+<span class="sd">        arg2 (class): an instance of the related makeup worker, in case it exists (E.g. Lens)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">instance</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span> <span class="o">=</span> <span class="n">instance</span><span class="p">()</span> <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Globals"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.Globals">[docs]</a><span class="k">class</span> <span class="nc">Globals</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Holds global values that are used by static workers and other functions</span>
+
+<span class="sd">    Properties:</span>
+<span class="sd">        :cap: Video captured from webcam, can be closed and open upon request</span>
+<span class="sd">        :face_detector: Instance of MediaPipe face_detection module</span>
+<span class="sd">        :face_mesher: Instance of MediaPipe face_mesh module</span>
+<span class="sd">        :makeup_workers: Dictionary of the makeup workers and their related information</span>
+<span class="sd">        :makeup args: parameter names that are given to makeup workers, used in the api designed for this purpose</span>
+<span class="sd">        :makeup instances:</span>
+<span class="sd">            - lens</span>
+<span class="sd">            - eyeliner</span>
+<span class="sd">            - eyeshadow</span>
+<span class="sd">            - blush</span>
+<span class="sd">            - lipstick</span>
+<span class="sd">            - foundation</span>
+<span class="sd">            - concealer</span>
+<span class="sd">        :motion detection variables:</span>
+<span class="sd">            - **prev_frame**: holds the previos frame for comparing with the current frame</span>
+<span class="sd">            - **motion detected** (bool): True if motion detected, False otherwise, starts with True</span>
+<span class="sd">            - **f_xmin**: minimum x value among points of face crop</span>
+<span class="sd">            - **f_ymin**: minimum y value among points of face crop</span>
+<span class="sd">            - **f_width**: width of the face crop</span>
+<span class="sd">            - **f_height**: height of the face crop</span>
+<span class="sd">        :idx_to_coordinates: holds to coordinates calculated by turning face mesh index points to real coordinates in given image of face</span>
+<span class="sd">        :output_frame: holds the given image without any change for using in static function or in special conditions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cap</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">()</span>
+    <span class="n">face_detector</span> <span class="o">=</span> <span class="n">face_detection</span><span class="o">.</span><span class="n">FaceDetection</span><span class="p">(</span><span class="n">min_detection_confidence</span><span class="o">=</span><span class="mf">.5</span><span class="p">)</span>
+    <span class="n">face_mesher</span> <span class="o">=</span> <span class="n">face_mesh</span><span class="o">.</span><span class="n">FaceMesh</span><span class="p">(</span><span class="n">min_detection_confidence</span><span class="o">=</span><span class="mf">.5</span><span class="p">,</span> <span class="n">min_tracking_confidence</span><span class="o">=</span><span class="mf">.5</span><span class="p">)</span>
+    <span class="n">makeup_workers</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">blush</span>       <span class="o">=</span> <span class="n">Makeup_Worker</span><span class="p">()</span>
+    <span class="n">eyeliner</span>    <span class="o">=</span> <span class="n">Makeup_Worker</span><span class="p">()</span>
+    <span class="n">lipstick</span>    <span class="o">=</span> <span class="n">Makeup_Worker</span><span class="p">()</span>
+    <span class="n">concealer</span>   <span class="o">=</span> <span class="n">Makeup_Worker</span><span class="p">()</span>
+    <span class="n">eyeshadow</span>   <span class="o">=</span> <span class="n">Makeup_Worker</span><span class="p">()</span>
+    <span class="n">foundation</span>  <span class="o">=</span> <span class="n">Makeup_Worker</span><span class="p">()</span>
+    <span class="n">lens</span>        <span class="o">=</span> <span class="n">Makeup_Worker</span><span class="p">(</span><span class="n">instance</span><span class="o">=</span><span class="n">Lens</span><span class="p">)</span>
+
+    <span class="c1">#### Motion Detection Vars ####</span>
+    <span class="n">prev_frame</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">motion_detected</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">f_xmin</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">f_ymin</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">f_width</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">f_height</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">################################</span>
+
+    <span class="n">makeup_args</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">idx_to_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">output_frame</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="c1"># face_resize_width = 500</span>
+
+
+
+<span class="c1">############################################################## WORKERS #################################################################</span>
+
+<div class="viewcode-block" id="concealer_worker"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.concealer_worker">[docs]</a><span class="k">def</span> <span class="nf">concealer_worker</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">out_queue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a concealer effect on an input image.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        arg6 (list)     : shared list for appending the output</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">crops</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">constants</span><span class="o">.</span><span class="n">CONCEALER</span><span class="p">:</span>
+        <span class="n">roi_x</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">roi_y</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">region</span><span class="p">:</span>
+            <span class="n">roi_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">roi_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">margin</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">top_x</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">top_y</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">bottom_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+        <span class="n">bottom_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+
+        <span class="n">rr</span><span class="p">,</span> <span class="n">cc</span> <span class="o">=</span> <span class="n">polygon</span><span class="p">(</span><span class="n">roi_x</span><span class="p">,</span> <span class="n">roi_y</span><span class="p">)</span>
+        
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,]</span>
+
+        <span class="n">crops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">commons</span><span class="o">.</span><span class="n">apply_blur_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span> <span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+        <span class="n">bounds</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">])</span>
+
+    <span class="c1"># Globals.concealer.crops = crops</span>
+    <span class="n">Globals</span><span class="o">.</span><span class="n">concealer</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+
+    <span class="n">out_queue</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="s1">&#39;crops&#39;</span><span class="p">:</span> <span class="n">crops</span><span class="p">,</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="n">bounds</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="concealer_worker_static"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.concealer_worker_static">[docs]</a><span class="k">def</span> <span class="nf">concealer_worker_static</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">out_queue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a concealer effect on an input image</span>
+<span class="sd">    with the calculated boundaries in the normal worker function.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        arg6 (list)     : shared list for appending the output</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">crops</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="p">[</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">]</span> <span class="ow">in</span> <span class="n">Globals</span><span class="o">.</span><span class="n">concealer</span><span class="o">.</span><span class="n">bounds</span><span class="p">:</span>
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">]</span>
+        <span class="n">crops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">commons</span><span class="o">.</span><span class="n">apply_blur_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span> <span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+
+    <span class="n">out_queue</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="s1">&#39;crops&#39;</span><span class="p">:</span> <span class="n">crops</span><span class="p">,</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="n">Globals</span><span class="o">.</span><span class="n">concealer</span><span class="o">.</span><span class="n">bounds</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="blush_worker"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.blush_worker">[docs]</a><span class="k">def</span> <span class="nf">blush_worker</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">out_queue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a blush effect on an input image.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        arg6 (list)     : shared list for appending the output</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">crops</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">constants</span><span class="o">.</span><span class="n">BLUSH</span><span class="p">:</span>
+        <span class="n">roi_x</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">roi_y</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">region</span><span class="p">:</span>
+            <span class="n">roi_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">roi_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">margin</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">top_x</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">top_y</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">bottom_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+        <span class="n">bottom_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+
+        <span class="n">rr</span><span class="p">,</span> <span class="n">cc</span> <span class="o">=</span> <span class="n">polygon</span><span class="p">(</span><span class="n">roi_x</span><span class="p">,</span> <span class="n">roi_y</span><span class="p">)</span>
+        
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,</span> <span class="p">]</span>
+
+        <span class="n">crops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">commons</span><span class="o">.</span><span class="n">apply_blur_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span> <span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+        <span class="n">bounds</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">])</span>
+
+    <span class="c1"># Globals.blush.crops = crops</span>
+    <span class="n">Globals</span><span class="o">.</span><span class="n">blush</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+
+    <span class="n">out_queue</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="s1">&#39;crops&#39;</span><span class="p">:</span> <span class="n">crops</span><span class="p">,</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="n">bounds</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="blush_worker_static"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.blush_worker_static">[docs]</a><span class="k">def</span> <span class="nf">blush_worker_static</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">out_queue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a blush effect on an input image</span>
+<span class="sd">    with the calculated boundaries in the normal worker function.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        arg6 (list)     : shared list for appending the output</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">crops</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="p">[</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">]</span> <span class="ow">in</span> <span class="n">Globals</span><span class="o">.</span><span class="n">blush</span><span class="o">.</span><span class="n">bounds</span><span class="p">:</span>
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">]</span>
+        <span class="n">crops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">commons</span><span class="o">.</span><span class="n">apply_blur_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span> <span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+
+    <span class="n">out_queue</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="s1">&#39;crops&#39;</span><span class="p">:</span> <span class="n">crops</span><span class="p">,</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="n">Globals</span><span class="o">.</span><span class="n">blush</span><span class="o">.</span><span class="n">bounds</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="lipstick_worker"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.lipstick_worker">[docs]</a><span class="k">def</span> <span class="nf">lipstick_worker</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">gloss</span><span class="p">,</span> <span class="n">out_queue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a lipstick effect on an input image.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        arg6 (list)     : shared list for appending the output</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">crops</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">constants</span><span class="o">.</span><span class="n">LIPS</span><span class="p">:</span>
+        <span class="n">roi_x</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">roi_y</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">region</span><span class="p">:</span>
+            <span class="n">roi_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">roi_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">margin</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">top_x</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">top_y</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">bottom_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+        <span class="n">bottom_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+
+        <span class="n">rr</span><span class="p">,</span> <span class="n">cc</span> <span class="o">=</span> <span class="n">polygon</span><span class="p">(</span><span class="n">roi_x</span><span class="p">,</span> <span class="n">roi_y</span><span class="p">)</span>
+        
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,]</span>
+        <span class="k">if</span> <span class="n">gloss</span><span class="p">:</span>
+            <span class="n">crop</span> <span class="o">=</span> <span class="n">commons</span><span class="o">.</span><span class="n">moist</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="mi">220</span><span class="p">)</span>
+        <span class="n">crop_colored</span> <span class="o">=</span> <span class="n">commons</span><span class="o">.</span><span class="n">apply_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">intensity</span><span class="p">)</span>
+        <span class="n">crops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">commons</span><span class="o">.</span><span class="n">apply_blur</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span><span class="n">crop_colored</span><span class="p">,</span><span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+        <span class="n">bounds</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">])</span>
+
+    <span class="c1"># Globals.lipstick.crops = crops</span>
+    <span class="n">Globals</span><span class="o">.</span><span class="n">lipstick</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+
+    <span class="n">out_queue</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;crops&#39;</span><span class="p">:</span> <span class="n">crops</span><span class="p">,</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="n">bounds</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="lisptick_worker_static"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.lisptick_worker_static">[docs]</a><span class="k">def</span> <span class="nf">lisptick_worker_static</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">gloss</span><span class="p">,</span> <span class="n">out_queue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a lipstick effect on an input image</span>
+<span class="sd">    with the calculated boundaries in the normal worker function.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        arg6 (list)     : shared list for appending the output</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">crops</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="p">[</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">]</span> <span class="ow">in</span> <span class="n">Globals</span><span class="o">.</span><span class="n">lipstick</span><span class="o">.</span><span class="n">bounds</span><span class="p">:</span>
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,]</span>
+        <span class="k">if</span> <span class="n">gloss</span><span class="p">:</span>
+           <span class="n">crop</span> <span class="o">=</span> <span class="n">commons</span><span class="o">.</span><span class="n">moist</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="mi">220</span><span class="p">)</span>
+        <span class="n">crop_colored</span> <span class="o">=</span> <span class="n">commons</span><span class="o">.</span><span class="n">apply_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">intensity</span><span class="p">)</span>
+        <span class="n">crops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">commons</span><span class="o">.</span><span class="n">apply_blur</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span><span class="n">crop_colored</span><span class="p">,</span><span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+
+    <span class="n">out_queue</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;crops&#39;</span><span class="p">:</span> <span class="n">crops</span><span class="p">,</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="n">Globals</span><span class="o">.</span><span class="n">lipstick</span><span class="o">.</span><span class="n">bounds</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="eyeshadow_worker"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.eyeshadow_worker">[docs]</a><span class="k">def</span> <span class="nf">eyeshadow_worker</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">out_queue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies an eyeshadow effect on an input image.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        arg6 (list)     : shared list for appending the output</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">crops</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">constants</span><span class="o">.</span><span class="n">EYESHADOW</span><span class="p">:</span>
+        <span class="n">roi_x</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">roi_y</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">region</span><span class="p">:</span>
+            <span class="n">roi_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">roi_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">margin</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">top_x</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">top_y</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">bottom_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+        <span class="n">bottom_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+
+        <span class="n">rr</span><span class="p">,</span> <span class="n">cc</span> <span class="o">=</span> <span class="n">polygon</span><span class="p">(</span><span class="n">roi_x</span><span class="p">,</span> <span class="n">roi_y</span><span class="p">)</span>
+        
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,]</span>
+        <span class="n">crop_colored</span> <span class="o">=</span> <span class="n">commons</span><span class="o">.</span><span class="n">apply_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">intensity</span><span class="p">)</span>
+        <span class="n">crops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">commons</span><span class="o">.</span><span class="n">apply_blur</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span><span class="n">crop_colored</span><span class="p">,</span><span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="mi">31</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span>
+        <span class="n">bounds</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">])</span>
+
+    <span class="c1"># Globals.eyeshadow.crops = crops</span>
+    <span class="n">Globals</span><span class="o">.</span><span class="n">eyeshadow</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+
+    <span class="n">out_queue</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s1">&#39;crops&#39;</span><span class="p">:</span> <span class="n">crops</span><span class="p">,</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="n">bounds</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="eyeshadow_worker_static"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.eyeshadow_worker_static">[docs]</a><span class="k">def</span> <span class="nf">eyeshadow_worker_static</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">out_queue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a eyeshadow effect on an input image</span>
+<span class="sd">    with the calculated boundaries in the normal worker function.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        arg6 (list)     : shared list for appending the output</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">crops</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="p">[</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">]</span> <span class="ow">in</span> <span class="n">Globals</span><span class="o">.</span><span class="n">eyeshadow</span><span class="o">.</span><span class="n">bounds</span><span class="p">:</span>
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,]</span>
+        <span class="n">crop_colored</span> <span class="o">=</span> <span class="n">commons</span><span class="o">.</span><span class="n">apply_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">intensity</span><span class="p">)</span>
+        <span class="n">crops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">commons</span><span class="o">.</span><span class="n">apply_blur</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span><span class="n">crop_colored</span><span class="p">,</span><span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="mi">31</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span>
+
+    <span class="n">out_queue</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s1">&#39;crops&#39;</span><span class="p">:</span> <span class="n">crops</span><span class="p">,</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="n">Globals</span><span class="o">.</span><span class="n">eyeshadow</span><span class="o">.</span><span class="n">bounds</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="eyeliner_worker"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.eyeliner_worker">[docs]</a><span class="k">def</span> <span class="nf">eyeliner_worker</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">out_queue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies an eyeliner effect on an input image.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        arg6 (list)     : shared list for appending the output</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">crops</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">constants</span><span class="o">.</span><span class="n">EYELINER</span><span class="p">:</span>
+        <span class="n">roi_x</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">roi_y</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">region</span><span class="p">:</span>
+            <span class="n">roi_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">roi_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">margin</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">top_x</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">top_y</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">bottom_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+        <span class="n">bottom_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+
+        <span class="n">rr</span><span class="p">,</span> <span class="n">cc</span> <span class="o">=</span> <span class="n">polygon</span><span class="p">(</span><span class="n">roi_x</span><span class="p">,</span> <span class="n">roi_y</span><span class="p">)</span>
+        
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,]</span>
+        <span class="n">crop_colored</span> <span class="o">=</span> <span class="n">commons</span><span class="o">.</span><span class="n">apply_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">)</span>
+        <span class="n">crops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">commons</span><span class="o">.</span><span class="n">apply_blur</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span><span class="n">crop_colored</span><span class="p">,</span><span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+        <span class="n">bounds</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">])</span>
+
+    <span class="c1"># Globals.eyeliner.crops = crops</span>
+    <span class="n">Globals</span><span class="o">.</span><span class="n">eyeliner</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+
+    <span class="n">out_queue</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s1">&#39;crops&#39;</span><span class="p">:</span> <span class="n">crops</span><span class="p">,</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="n">bounds</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="eyeliner_worker_static"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.eyeliner_worker_static">[docs]</a><span class="k">def</span> <span class="nf">eyeliner_worker_static</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">out_queue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a eyeliner effect on an input image</span>
+<span class="sd">    with the calculated boundaries in the normal worker function.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        arg6 (list)     : shared list for appending the output</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">crops</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="p">[</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">]</span> <span class="ow">in</span> <span class="n">Globals</span><span class="o">.</span><span class="n">eyeliner</span><span class="o">.</span><span class="n">bounds</span><span class="p">:</span>
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,]</span>
+        <span class="n">crop_colored</span> <span class="o">=</span> <span class="n">commons</span><span class="o">.</span><span class="n">apply_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">)</span>
+        <span class="n">crops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">commons</span><span class="o">.</span><span class="n">apply_blur</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span><span class="n">crop_colored</span><span class="p">,</span><span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+    <span class="n">out_queue</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s1">&#39;crops&#39;</span><span class="p">:</span> <span class="n">crops</span><span class="p">,</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="n">Globals</span><span class="o">.</span><span class="n">eyeliner</span><span class="o">.</span><span class="n">bounds</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="foundation_worker"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.foundation_worker">[docs]</a><span class="k">def</span> <span class="nf">foundation_worker</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a foundation effect on an input image.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ndarray: The given image with the foundation effect applied on it, this image will be</span>
+<span class="sd">        used as an input to other activated makeup workers in order for them to apply their effect</span>
+<span class="sd">        on this image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">bounds</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">constants</span><span class="o">.</span><span class="n">FOUNDATION</span><span class="p">:</span>
+        <span class="n">roi_x</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">roi_y</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">region</span><span class="p">:</span>
+            <span class="n">roi_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">roi_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">point</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">margin</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">top_x</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">top_y</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">-</span><span class="n">margin</span>
+        <span class="n">bottom_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_x</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+        <span class="n">bottom_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_y</span><span class="p">)</span><span class="o">+</span><span class="n">margin</span>
+
+        <span class="n">rr</span><span class="p">,</span> <span class="n">cc</span> <span class="o">=</span> <span class="n">polygon</span><span class="p">(</span><span class="n">roi_x</span><span class="p">,</span> <span class="n">roi_y</span><span class="p">)</span>
+        
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,]</span>
+        <span class="c1"># crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)</span>
+        <span class="c1"># image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)</span>
+        <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,]</span> <span class="o">=</span> <span class="n">commons</span><span class="o">.</span><span class="n">apply_blur_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span> <span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
+
+        <span class="n">bounds</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">])</span>
+
+    <span class="n">Globals</span><span class="o">.</span><span class="n">foundation</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+
+    <span class="k">return</span> <span class="n">image</span></div>
+
+<div class="viewcode-block" id="foundation_worker_static"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.foundation_worker_static">[docs]</a><span class="k">def</span> <span class="nf">foundation_worker_static</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a foundation effect on an input image</span>
+<span class="sd">    with the calculated boundaries in the normal worker function.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ndarray: The given image with the foundation effect applied on it, this image will be</span>
+<span class="sd">        used as an input to other activated makeup workers in order for them to apply their effect</span>
+<span class="sd">        on this image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="p">[</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">bottom_x</span><span class="p">,</span> <span class="n">bottom_y</span><span class="p">]</span> <span class="ow">in</span> <span class="n">Globals</span><span class="o">.</span><span class="n">foundation</span><span class="o">.</span><span class="n">bounds</span><span class="p">:</span>
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,]</span>
+        <span class="c1"># crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)</span>
+        <span class="c1"># image[top_y:bottom_y, top_x:bottom_x,] = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 15, 5)</span>
+        <span class="n">image</span><span class="p">[</span><span class="n">top_y</span><span class="p">:</span><span class="n">bottom_y</span><span class="p">,</span> <span class="n">top_x</span><span class="p">:</span><span class="n">bottom_x</span><span class="p">,]</span> <span class="o">=</span> <span class="n">commons</span><span class="o">.</span><span class="n">apply_blur_color</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">cc</span><span class="o">-</span><span class="n">top_y</span> <span class="p">,</span><span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">image</span></div>
+
+
+<div class="viewcode-block" id="lens_worker"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.lens_worker">[docs]</a><span class="k">def</span> <span class="nf">lens_worker</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a contact lens effect on an input image.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ndarray: The given image with the contact effect applied on it, this image will be</span>
+<span class="sd">        used as an input to other activated makeup workers in order for them to apply their effect</span>
+<span class="sd">        on this image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">Globals</span><span class="o">.</span><span class="n">lens</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">apply_lens</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="lens_worker_static"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.lens_worker_static">[docs]</a><span class="k">def</span> <span class="nf">lens_worker_static</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function applies a contact lens effect on an input image</span>
+<span class="sd">    with the calculated boundaries in the normal worker function.</span>
+<span class="sd">    This function is called by a threading function and its output</span>
+<span class="sd">    is appended to a given list to be processed later.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray)  : input image, a crop of the face found in camera viewport</span>
+<span class="sd">        arg2 (int)      : rgb value of red color </span>
+<span class="sd">        arg3 (int)      : rgb value of green color </span>
+<span class="sd">        arg4 (int)      : rgb value of blue color</span>
+<span class="sd">        arg5 (float)    : intensity of the applied makeup</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ndarray: The given image with the contact lens effect applied on it, this image will be</span>
+<span class="sd">        used as an input to other activated makeup workers in order for them to apply their effect</span>
+<span class="sd">        on this image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">return</span> <span class="n">Globals</span><span class="o">.</span><span class="n">lens</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">apply_lens_static</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></div>
+
+
+<span class="c1">####################################################################################################################################</span>
+
+
+<span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;lens_worker&#39;</span><span class="p">:</span>          <span class="p">{</span> <span class="s1">&#39;function&#39;</span><span class="p">:</span> <span class="n">lens_worker</span><span class="p">,</span>          <span class="s1">&#39;static_function&#39;</span><span class="p">:</span> <span class="n">lens_worker_static</span><span class="p">,</span>       <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;enabled_first&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+    <span class="s1">&#39;lipstick_worker&#39;</span><span class="p">:</span>      <span class="p">{</span> <span class="s1">&#39;function&#39;</span><span class="p">:</span> <span class="n">lipstick_worker</span><span class="p">,</span>      <span class="s1">&#39;static_function&#39;</span><span class="p">:</span> <span class="n">lisptick_worker_static</span><span class="p">,</span>   <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span> <span class="p">},</span>
+    <span class="s1">&#39;eyeshadow_worker&#39;</span><span class="p">:</span>     <span class="p">{</span> <span class="s1">&#39;function&#39;</span><span class="p">:</span> <span class="n">eyeshadow_worker</span><span class="p">,</span>     <span class="s1">&#39;static_function&#39;</span><span class="p">:</span> <span class="n">eyeshadow_worker_static</span><span class="p">,</span>  <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span> <span class="p">},</span>
+    <span class="s1">&#39;eyeliner_worker&#39;</span><span class="p">:</span>      <span class="p">{</span> <span class="s1">&#39;function&#39;</span><span class="p">:</span> <span class="n">eyeliner_worker</span><span class="p">,</span>      <span class="s1">&#39;static_function&#39;</span><span class="p">:</span> <span class="n">eyeliner_worker_static</span><span class="p">,</span>   <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span> <span class="p">},</span>
+    <span class="s1">&#39;blush_worker&#39;</span><span class="p">:</span>         <span class="p">{</span> <span class="s1">&#39;function&#39;</span><span class="p">:</span> <span class="n">blush_worker</span><span class="p">,</span>         <span class="s1">&#39;static_function&#39;</span><span class="p">:</span> <span class="n">blush_worker_static</span><span class="p">,</span>      <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span> <span class="p">},</span>
+    <span class="s1">&#39;concealer_worker&#39;</span><span class="p">:</span>     <span class="p">{</span> <span class="s1">&#39;function&#39;</span><span class="p">:</span> <span class="n">concealer_worker</span><span class="p">,</span>     <span class="s1">&#39;static_function&#39;</span><span class="p">:</span> <span class="n">concealer_worker_static</span><span class="p">,</span>  <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span> <span class="p">},</span>
+    <span class="s1">&#39;foundation_worker&#39;</span><span class="p">:</span>    <span class="p">{</span> <span class="s1">&#39;function&#39;</span><span class="p">:</span> <span class="n">foundation_worker</span><span class="p">,</span>    <span class="s1">&#39;static_function&#39;</span><span class="p">:</span> <span class="n">foundation_worker_static</span><span class="p">,</span> <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;enabled_first&#39;</span><span class="p">:</span> <span class="kc">False</span> <span class="p">},</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="join_makeup_workers"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.join_makeup_workers">[docs]</a><span class="k">def</span> <span class="nf">join_makeup_workers</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Calls all the enabled makeup workers to produce their results on the given image.</span>
+<span class="sd">    If enabled, lens and foundation workers are called beforehand and their results are given to other workers.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray): The face crop given to apply makeup filters on</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ndarray: The face crop with requested filters applied on</span>
+
+<span class="sd">    How it works:</span>
+<span class="sd">        #. Create a list to keep threads and another list to use as shared memory between the threads</span>
+<span class="sd">        #. Check if foundation and lens worker are enabled, if so, apply them sequentially, this is to prevent merging issues with other workers&#39; results</span>
+<span class="sd">        #. Iterate over makeup workers and start a thread for any one of them that is active, the arguments for each function is based on its own details. Also, the shared list is also passed to the target function</span>
+<span class="sd">        #. Threads are added to the threads list and after creation, they are started and joined to finish with each other</span>
+<span class="sd">        #. The shared list which now holds the results of all the worker functions is sorted by the index of each worker to create proper layering of filters</span>
+<span class="sd">        #. Makeup filters are applied to the proper area one by one in the order of their predecence</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="n">threads</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">shared_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;foundation_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled_first&#39;</span><span class="p">]:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">foundation_worker</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="o">*</span><span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;foundation_worker&#39;</span><span class="p">][</span><span class="s1">&#39;args&#39;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;lens_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled_first&#39;</span><span class="p">]:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">lens_worker</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="o">*</span><span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;lens_worker&#39;</span><span class="p">][</span><span class="s1">&#39;args&#39;</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">makeup_worker</span> <span class="ow">in</span> <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">:</span>
+        <span class="n">worker</span> <span class="o">=</span> <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="n">makeup_worker</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">worker</span><span class="p">[</span><span class="s1">&#39;enabled&#39;</span><span class="p">]:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+                <span class="n">target</span><span class="o">=</span><span class="n">worker</span><span class="p">[</span><span class="s1">&#39;function&#39;</span><span class="p">],</span>
+                <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="o">*</span><span class="n">worker</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">],</span> <span class="n">shared_list</span><span class="p">),</span>
+                <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="n">threads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">threads</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">threads</span><span class="p">:</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+        <span class="n">shared_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">shared_list</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">shared_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">temp_img</span> <span class="o">=</span> <span class="n">shared_list</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            
+            <span class="k">for</span> <span class="n">crop</span><span class="p">,</span> <span class="p">[</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">]</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">temp_img</span><span class="p">[</span><span class="s1">&#39;crops&#39;</span><span class="p">],</span> <span class="n">temp_img</span><span class="p">[</span><span class="s1">&#39;bounds&#39;</span><span class="p">]):</span>
+                <span class="n">image</span><span class="p">[</span><span class="n">cc</span><span class="p">,</span> <span class="n">rr</span><span class="p">]</span> <span class="o">=</span> <span class="n">crop</span><span class="p">[</span><span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span> <span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">image</span></div>
+
+
+<div class="viewcode-block" id="join_makeup_workers_static"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.join_makeup_workers_static">[docs]</a><span class="k">def</span> <span class="nf">join_makeup_workers_static</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Calls all the enabled makeup workers to produce their results on the given image without calculating the bounds.</span>
+<span class="sd">    Only static methods are called in this function so the bounds that were calculated in the previous frame are used.</span>
+<span class="sd">    If enabled, lens and foundation workers are called beforehand and their results are given to other workers.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (ndarray): The face crop given to apply makeup filters on</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ndarray: The face crop with requested filters applied on</span>
+
+<span class="sd">    How it works:</span>
+<span class="sd">        The procedure is the same as :py:meth:`join_makeup_workers`, with the exception that in this method, static makeup workers are called.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">threads</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">shared_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;foundation_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled_first&#39;</span><span class="p">]:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">foundation_worker_static</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="o">*</span><span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;foundation_worker&#39;</span><span class="p">][</span><span class="s1">&#39;args&#39;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;lens_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled_first&#39;</span><span class="p">]:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">lens_worker_static</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="o">*</span><span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;lens_worker&#39;</span><span class="p">][</span><span class="s1">&#39;args&#39;</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">makeup_worker</span> <span class="ow">in</span> <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">:</span>
+        <span class="n">worker</span> <span class="o">=</span> <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="n">makeup_worker</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">worker</span><span class="p">[</span><span class="s1">&#39;enabled&#39;</span><span class="p">]:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+                <span class="n">target</span><span class="o">=</span><span class="n">worker</span><span class="p">[</span><span class="s1">&#39;static_function&#39;</span><span class="p">],</span>
+                <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="o">*</span><span class="n">worker</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">],</span> <span class="n">shared_list</span><span class="p">),</span>
+                <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="n">threads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">threads</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">threads</span><span class="p">:</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+        <span class="n">shared_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">shared_list</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">shared_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">temp_img</span> <span class="o">=</span> <span class="n">shared_list</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            
+            <span class="k">for</span> <span class="n">crop</span><span class="p">,</span> <span class="p">[</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">top_x</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">]</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">temp_img</span><span class="p">[</span><span class="s1">&#39;crops&#39;</span><span class="p">],</span> <span class="n">temp_img</span><span class="p">[</span><span class="s1">&#39;bounds&#39;</span><span class="p">]):</span>
+                <span class="n">image</span><span class="p">[</span><span class="n">cc</span><span class="p">,</span> <span class="n">rr</span><span class="p">]</span> <span class="o">=</span> <span class="n">crop</span><span class="p">[</span><span class="n">cc</span><span class="o">-</span><span class="n">top_y</span><span class="p">,</span> <span class="n">rr</span><span class="o">-</span><span class="n">top_x</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">image</span></div>
+
+
+<div class="viewcode-block" id="apply_makeup"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.apply_makeup">[docs]</a><span class="k">def</span> <span class="nf">apply_makeup</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Reads a frame from webcam camera and prepares it for the makeup workers to apply their filters on it.</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        byte array: The final image is encoded and converted to byte array so that sending it over a REST API is feasible.</span>
+<span class="sd">    </span>
+<span class="sd">    How it works:</span>
+<span class="sd">        #. Preparing the input</span>
+<span class="sd">            #. A frame is read from the webcam into an image</span>
+<span class="sd">            #. An unchanged copy of the image is saved into the global ``output_frame``</span>
+<span class="sd">            #. Image is flipped horizontally so that it is shown appropriately when displayed back to the user</span>
+<span class="sd">        #. Motion detection</span>
+<span class="sd">            #. A gray version of the image is generated</span>
+<span class="sd">            #. If the global ``prev_frame`` has not been initilized, copy the gray image into it and continue</span>
+<span class="sd">            #. Calculate the absolute difference between the current frame and the global ``prev_frame``</span>
+<span class="sd">            #. Threshold the difference to ignore minor differences</span>
+<span class="sd">            #. Dilate the threshold result</span>
+<span class="sd">            #. Find contours and calculate the contour area</span>
+<span class="sd">            #. If the contour area is more than a certain amount, the global ``motion_detected`` flag will be set to ``True``</span>
+<span class="sd">        #. If motion has been detected:</span>
+<span class="sd">            #. Process the image with MediaPipe&#39;s face detection API, then crop the image with a padding to cover the whole face</span>
+<span class="sd">            #. Process the cropped face image with MediaPipe&#39;s face mesh API</span>
+<span class="sd">            #. Convert the point indexes in :py:mod:`src.cv.makeup.constants` into actual coordinates in the face crop</span>
+<span class="sd">            #. Call the joining function by passing the face crop image to it to apply the requested filters</span>
+<span class="sd">            #. Placing the face crop in the original image</span>
+<span class="sd">        #. If no motion has been detected:</span>
+<span class="sd">            #. Crop the image using the boundaries calculated the last time we detected motion</span>
+<span class="sd">            #. Call the static joining method by passing the face crop to it to apply the requested filters</span>
+<span class="sd">        #. Sending the result:</span>
+<span class="sd">            #. Encode the image in the desired extension (here we use ``.jpg``)</span>
+<span class="sd">            #. Put the image in a byte array and appending a proper header to be interpreted in the REST API`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">while</span> <span class="n">Globals</span><span class="o">.</span><span class="n">cap</span><span class="o">.</span><span class="n">isOpened</span><span class="p">():</span>
+        <span class="n">success</span><span class="p">,</span> <span class="n">image</span> <span class="o">=</span> <span class="n">Globals</span><span class="o">.</span><span class="n">cap</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ignoring empty camera frame.&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+
+        <span class="c1"># To improve performance, optionally mark the image as not writeable to</span>
+        <span class="c1"># pass by reference.</span>
+        <span class="n">image</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">writeable</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">Globals</span><span class="o">.</span><span class="n">output_frame</span> <span class="o">=</span> <span class="n">image</span>
+
+        <span class="c1"># Flip the image horizontally for a later selfie-view display</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">gray</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2GRAY</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">Globals</span><span class="o">.</span><span class="n">prev_frame</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">Globals</span><span class="o">.</span><span class="n">prev_frame</span> <span class="o">=</span> <span class="n">gray</span>
+            <span class="k">continue</span>
+
+        <span class="n">frame_diff</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">absdiff</span><span class="p">(</span><span class="n">Globals</span><span class="o">.</span><span class="n">prev_frame</span><span class="p">,</span> <span class="n">gray</span><span class="p">)</span>
+
+        <span class="n">frame_thresh</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span><span class="n">frame_diff</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">THRESH_BINARY</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> 
+        <span class="n">frame_thresh</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">dilate</span><span class="p">(</span><span class="n">frame_thresh</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">cnts</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">findContours</span><span class="p">(</span><span class="n">frame_thresh</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">cv2</span><span class="o">.</span><span class="n">RETR_EXTERNAL</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">CHAIN_APPROX_SIMPLE</span><span class="p">)</span> 
+
+        <span class="k">for</span> <span class="n">contour</span> <span class="ow">in</span> <span class="n">cnts</span><span class="p">:</span> 
+            <span class="n">temp</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">contourArea</span><span class="p">(</span><span class="n">contour</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">temp</span> <span class="o">&lt;</span> <span class="mi">300</span><span class="p">:</span>  
+                <span class="k">continue</span>
+            <span class="n">Globals</span><span class="o">.</span><span class="n">motion_detected</span> <span class="o">=</span> <span class="kc">True</span>
+
+        
+        <span class="k">if</span> <span class="n">Globals</span><span class="o">.</span><span class="n">motion_detected</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;motion detected&#39;</span><span class="p">)</span>
+
+            <span class="n">results</span> <span class="o">=</span> <span class="n">Globals</span><span class="o">.</span><span class="n">face_detector</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
+            <span class="n">im_height</span><span class="p">,</span> <span class="n">im_width</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">results</span><span class="o">.</span><span class="n">detections</span><span class="p">:</span>
+                <span class="n">detection</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">detections</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                
+                <span class="n">Globals</span><span class="o">.</span><span class="n">f_xmin</span> <span class="o">=</span> <span class="n">f_xmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">detection</span><span class="o">.</span><span class="n">location_data</span><span class="o">.</span><span class="n">relative_bounding_box</span><span class="o">.</span><span class="n">xmin</span> <span class="o">-</span> <span class="mf">.1</span><span class="p">)</span> <span class="o">*</span> <span class="n">im_width</span><span class="p">)</span>
+                <span class="n">Globals</span><span class="o">.</span><span class="n">f_ymin</span> <span class="o">=</span> <span class="n">f_ymin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">detection</span><span class="o">.</span><span class="n">location_data</span><span class="o">.</span><span class="n">relative_bounding_box</span><span class="o">.</span><span class="n">ymin</span> <span class="o">-</span> <span class="mf">.2</span><span class="p">)</span> <span class="o">*</span> <span class="n">im_height</span><span class="p">)</span>
+                <span class="n">Globals</span><span class="o">.</span><span class="n">f_width</span> <span class="o">=</span> <span class="n">f_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">detection</span><span class="o">.</span><span class="n">location_data</span><span class="o">.</span><span class="n">relative_bounding_box</span><span class="o">.</span><span class="n">width</span> <span class="o">+</span> <span class="mf">.2</span><span class="p">)</span> <span class="o">*</span> <span class="n">im_width</span><span class="p">)</span>
+                <span class="n">Globals</span><span class="o">.</span><span class="n">f_height</span> <span class="o">=</span> <span class="n">f_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">detection</span><span class="o">.</span><span class="n">location_data</span><span class="o">.</span><span class="n">relative_bounding_box</span><span class="o">.</span><span class="n">height</span> <span class="o">+</span> <span class="mf">.25</span><span class="p">)</span> <span class="o">*</span> <span class="n">im_height</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">f_xmin</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">Globals</span><span class="o">.</span><span class="n">f_xmin</span> <span class="o">=</span> <span class="n">f_xmin</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">elif</span> <span class="n">f_ymin</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">Globals</span><span class="o">.</span><span class="n">f_ymin</span> <span class="o">=</span> <span class="n">f_ymin</span> <span class="o">=</span> <span class="mi">0</span>
+
+                <span class="n">face_crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">f_ymin</span><span class="p">:</span><span class="n">f_ymin</span><span class="o">+</span><span class="n">f_height</span><span class="p">,</span> <span class="n">f_xmin</span><span class="p">:</span><span class="n">f_xmin</span><span class="o">+</span><span class="n">f_width</span><span class="p">]</span>
+
+                <span class="c1"># crop_height, crop_width = face_crop.shape[:2]</span>
+
+                <span class="c1"># face_crop = cv2.resize(face_crop,</span>
+                <span class="c1">#             (Globals.face_resize_width, int(crop_height * Globals.face_resize_width / float(crop_width))),</span>
+                <span class="c1">#             interpolation=cv2.INTER_AREA)</span>
+
+                <span class="c1"># image.flags.writeable = False</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">Globals</span><span class="o">.</span><span class="n">face_mesher</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">face_crop</span><span class="p">)</span>
+                <span class="c1"># image.flags.writeable = True</span>
+
+                <span class="k">if</span> <span class="n">results</span><span class="o">.</span><span class="n">multi_face_landmarks</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">landmark_list</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">multi_face_landmarks</span><span class="p">:</span>
+            
+                        <span class="n">image_rows</span><span class="p">,</span> <span class="n">image_cols</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">face_crop</span><span class="o">.</span><span class="n">shape</span>
+                        <span class="n">idx_to_coordinates</span> <span class="o">=</span> <span class="p">{}</span>
+                        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">landmark</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">landmark_list</span><span class="o">.</span><span class="n">landmark</span><span class="p">):</span>
+                            
+                            <span class="k">if</span> <span class="p">((</span><span class="n">landmark</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s1">&#39;visibility&#39;</span><span class="p">)</span> <span class="ow">and</span>
+                                <span class="n">landmark</span><span class="o">.</span><span class="n">visibility</span> <span class="o">&lt;</span> <span class="n">constants</span><span class="o">.</span><span class="n">VISIBILITY_THRESHOLD</span><span class="p">)</span> <span class="ow">or</span>
+                                <span class="p">(</span><span class="n">landmark</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s1">&#39;presence&#39;</span><span class="p">)</span> <span class="ow">and</span>
+                                <span class="n">landmark</span><span class="o">.</span><span class="n">presence</span> <span class="o">&lt;</span> <span class="n">constants</span><span class="o">.</span><span class="n">PRESENCE_THRESHOLD</span><span class="p">)):</span>
+                                <span class="k">continue</span>
+                            <span class="n">landmark_px</span> <span class="o">=</span> <span class="n">commons</span><span class="o">.</span><span class="n">_normalized_to_pixel_coordinates</span><span class="p">(</span><span class="n">landmark</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">landmark</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                                                                        <span class="n">image_cols</span><span class="p">,</span> <span class="n">image_rows</span><span class="p">)</span>
+
+                            <span class="k">if</span> <span class="n">landmark_px</span><span class="p">:</span>
+                                <span class="n">idx_to_coordinates</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">landmark_px</span>
+
+                    <span class="n">Globals</span><span class="o">.</span><span class="n">idx_to_coordinates</span> <span class="o">=</span> <span class="n">idx_to_coordinates</span>
+        
+
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">face_crop</span> <span class="o">=</span> <span class="n">join_makeup_workers</span><span class="p">(</span><span class="n">face_crop</span><span class="p">)</span>
+                        <span class="c1"># face_crop = cv2.resize(face_crop, (crop_width, crop_height), interpolation=cv2.INTER_AREA)</span>
+                        <span class="n">image</span><span class="p">[</span><span class="n">f_ymin</span><span class="p">:</span><span class="n">f_ymin</span><span class="o">+</span><span class="n">f_height</span><span class="p">,</span> <span class="n">f_xmin</span><span class="p">:</span><span class="n">f_xmin</span><span class="o">+</span><span class="n">f_width</span><span class="p">]</span> <span class="o">=</span> <span class="n">face_crop</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+                    
+                    <span class="n">Globals</span><span class="o">.</span><span class="n">motion_detected</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;no motion&#39;</span><span class="p">)</span>
+            <span class="n">face_crop</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">Globals</span><span class="o">.</span><span class="n">f_ymin</span><span class="p">:</span><span class="n">Globals</span><span class="o">.</span><span class="n">f_ymin</span><span class="o">+</span><span class="n">Globals</span><span class="o">.</span><span class="n">f_height</span><span class="p">,</span> <span class="n">Globals</span><span class="o">.</span><span class="n">f_xmin</span><span class="p">:</span><span class="n">Globals</span><span class="o">.</span><span class="n">f_xmin</span><span class="o">+</span><span class="n">Globals</span><span class="o">.</span><span class="n">f_width</span><span class="p">]</span>
+            
+            <span class="c1"># crop_height, crop_width = face_crop.shape[:2]</span>
+            <span class="c1"># face_crop = cv2.resize(face_crop,</span>
+            <span class="c1">#                 (Globals.face_resize_width, int(crop_height * Globals.face_resize_width / float(crop_width))),</span>
+            <span class="c1">#                 interpolation=cv2.INTER_AREA)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">face_crop</span> <span class="o">=</span> <span class="n">join_makeup_workers_static</span><span class="p">(</span><span class="n">face_crop</span><span class="p">)</span>
+                <span class="c1"># face_crop = cv2.resize(face_crop, (crop_width, crop_height), interpolation=cv2.INTER_AREA)</span>
+                <span class="n">image</span><span class="p">[</span><span class="n">Globals</span><span class="o">.</span><span class="n">f_ymin</span><span class="p">:</span><span class="n">Globals</span><span class="o">.</span><span class="n">f_ymin</span><span class="o">+</span><span class="n">Globals</span><span class="o">.</span><span class="n">f_height</span><span class="p">,</span> <span class="n">Globals</span><span class="o">.</span><span class="n">f_xmin</span><span class="p">:</span><span class="n">Globals</span><span class="o">.</span><span class="n">f_xmin</span><span class="o">+</span><span class="n">Globals</span><span class="o">.</span><span class="n">f_width</span><span class="p">]</span> <span class="o">=</span> <span class="n">face_crop</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+
+
+        <span class="n">Globals</span><span class="o">.</span><span class="n">prev_frame</span> <span class="o">=</span> <span class="n">gray</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># return image</span>
+
+        <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">encodedImage</span><span class="p">)</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imencode</span><span class="p">(</span><span class="s2">&quot;.jpg&quot;</span><span class="p">,</span> <span class="n">image</span><span class="p">)</span>
+        
+        <span class="c1"># ensure the frame was successfully encoded</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="c1"># yield the output frame in the byte format</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="sa">b</span><span class="s1">&#39;--frame</span><span class="se">\r\n</span><span class="s1">&#39;</span> <span class="sa">b</span><span class="s1">&#39;Content-Type: image/jpg</span><span class="se">\r\n\r\n</span><span class="s1">&#39;</span> <span class="o">+</span>
+            <span class="nb">bytearray</span><span class="p">(</span><span class="n">encodedImage</span><span class="p">)</span> <span class="o">+</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="enable_makeup"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.enable_makeup">[docs]</a><span class="k">def</span> <span class="nf">enable_makeup</span><span class="p">(</span><span class="n">makeup_type</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">intensity</span><span class="o">=</span><span class="mf">.7</span><span class="p">,</span> <span class="n">gloss</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Enables the requested makeup so that the joining methods will be applied it in the next frame.</span>
+<span class="sd">    It also passes the received arguments from the API to the corresponding function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (string): name of the makeup, it can be one of:</span>
+<span class="sd">            [eyeshadow, lipstick, blush, concealer, foundation, eyeliner, lens]</span>
+<span class="sd">        arg2 (int): rgb value of red color </span>
+<span class="sd">        arg3 (int): rgb value of green color </span>
+<span class="sd">        arg4 (int): rgb value of blue color</span>
+<span class="sd">        arg5 (float): intensity of the applied makeup</span>
+<span class="sd">        arg6 (bool): Determines whethere gloss needs to be applied or not (only for lipstick)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">Globals</span><span class="o">.</span><span class="n">motion_detected</span> <span class="o">=</span> <span class="kc">True</span>
+    
+    <span class="k">if</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;eyeshadow&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;eyeshadow_worker&#39;</span><span class="p">][</span><span class="s1">&#39;args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">]</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;eyeshadow_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;lipstick&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;lipstick_worker&#39;</span><span class="p">][</span><span class="s1">&#39;args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">gloss</span><span class="p">]</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;lipstick_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;blush&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;blush_worker&#39;</span><span class="p">][</span><span class="s1">&#39;args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">]</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;blush_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;concealer&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;concealer_worker&#39;</span><span class="p">][</span><span class="s1">&#39;args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">]</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;concealer_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;foundation&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;foundation_worker&#39;</span><span class="p">][</span><span class="s1">&#39;args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">]</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;foundation_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled_first&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;eyeliner&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;eyeliner_worker&#39;</span><span class="p">][</span><span class="s1">&#39;args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">]</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;eyeliner_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;lens&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;lens_worker&#39;</span><span class="p">][</span><span class="s1">&#39;args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">]</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;lens_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled_first&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<span class="n">Globals</span><span class="o">.</span><span class="n">makeup_args</span> <span class="o">=</span> <span class="n">enable_makeup</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span>
+
+
+<div class="viewcode-block" id="disable_makeup"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.disable_makeup">[docs]</a><span class="k">def</span> <span class="nf">disable_makeup</span><span class="p">(</span><span class="n">makeup_type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Disables the requested makeup so that the joining methods will not be applied it in the next frame.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (string): name of the makeup, it can be one of:</span>
+<span class="sd">            [eyeshadow, lipstick, blush, concealer, foundation, eyeliner, lens]</span>
+<span class="sd">            </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">Globals</span><span class="o">.</span><span class="n">motion_detected</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;eyeshadow&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;eyeshadow_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;lipstick&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;lipstick_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;blush&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;blush_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;concealer&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;concealer_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;foundation&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;foundation_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;eyeliner&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;eyeliner_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">makeup_type</span> <span class="o">==</span> <span class="s1">&#39;lens&#39;</span><span class="p">:</span>
+        <span class="n">Globals</span><span class="o">.</span><span class="n">makeup_workers</span><span class="p">[</span><span class="s1">&#39;lens_worker&#39;</span><span class="p">][</span><span class="s1">&#39;enabled_first&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="start_cam"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.start_cam">[docs]</a><span class="k">def</span> <span class="nf">start_cam</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Opens the camera with the desired camera index</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">Globals</span><span class="o">.</span><span class="n">cap</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="stop_cam"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.utils.stop_cam">[docs]</a><span class="k">def</span> <span class="nf">stop_cam</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Closes the camera when the user does not want to use the realtime virtual makeup functionality</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">Globals</span><span class="o">.</span><span class="n">cap</span><span class="o">.</span><span class="n">release</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Faezeh Shayesteh, Ali Goldani.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

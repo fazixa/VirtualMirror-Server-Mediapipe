@@ -1,0 +1,447 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>src.cv.makeup.commons &mdash; Virtual Mirror 1.0.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> Virtual Mirror
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Virtual Mirror</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>src.cv.makeup.commons</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for src.cv.makeup.commons</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">re</span> <span class="kn">import</span> <span class="n">U</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">pylab</span> <span class="kn">import</span> <span class="n">mean</span>
+<span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">color</span>
+<span class="kn">import</span> <span class="nn">mediapipe</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">import</span> <span class="nn">imutils</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">skimage.draw</span> <span class="kn">import</span> <span class="n">line</span><span class="p">,</span> <span class="n">polygon</span><span class="p">,</span> <span class="n">polygon_perimeter</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">c_</span>
+<span class="n">mp_drawing</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">solutions</span><span class="o">.</span><span class="n">drawing_utils</span>
+<span class="n">mp_face_mesh</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">solutions</span><span class="o">.</span><span class="n">face_mesh</span>
+
+
+<span class="k">def</span> <span class="nf">_normalized_to_pixel_coordinates</span><span class="p">(</span>
+    <span class="n">normalized_x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">normalized_y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">image_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">image_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+  <span class="sd">&quot;&quot;&quot;Converts normalized value pair to pixel coordinates.&quot;&quot;&quot;</span>
+
+  <span class="c1"># Checks if the float value is between 0 and 1.</span>
+  <span class="k">def</span> <span class="nf">is_valid_normalized_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">value</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span>
+                                                      <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+
+  <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">is_valid_normalized_value</span><span class="p">(</span><span class="n">normalized_x</span><span class="p">)</span> <span class="ow">and</span>
+          <span class="n">is_valid_normalized_value</span><span class="p">(</span><span class="n">normalized_y</span><span class="p">)):</span>
+    <span class="c1"># TODO: Draw coordinates even if it&#39;s outside of the image bounds.</span>
+    <span class="k">return</span> <span class="kc">None</span>
+  <span class="n">x_px</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">normalized_x</span> <span class="o">*</span> <span class="n">image_width</span><span class="p">),</span> <span class="n">image_width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="n">y_px</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">normalized_y</span> <span class="o">*</span> <span class="n">image_height</span><span class="p">),</span> <span class="n">image_height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">x_px</span><span class="p">,</span> <span class="n">y_px</span>
+
+
+<div class="viewcode-block" id="apply_color"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.commons.apply_color">[docs]</a><span class="k">def</span> <span class="nf">apply_color</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;  </span>
+<span class="sd">    applies color to desired region</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (image) : input image</span>
+<span class="sd">        arg2 (int array) : X cordinates of the desired region that is going be colored</span>
+<span class="sd">        arg3 (int array) : Y cordinates of the desired region that is going be colored</span>
+<span class="sd">        arg4 (int) : red value of rgb color</span>
+<span class="sd">        arg5 (int) : green value of rgb color</span>
+<span class="sd">        arg6 (int) : blue value of rgb color</span>
+<span class="sd">        arg7 (float) : intensity of the applied color</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        the image with the applied color on the desire area</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">im_copy</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+
+
+    <span class="c1"># converting desired parts of the original image to LAB color space</span>
+    <span class="n">lip_LAB</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">rgb2lab</span><span class="p">((</span><span class="n">im_copy</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="c1"># calculating mean of each channel</span>
+    <span class="n">L</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">B</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">lip_LAB</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">mean</span><span class="p">(</span><span class="n">lip_LAB</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">mean</span><span class="p">(</span><span class="n">lip_LAB</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="c1"># converting the color of the makeup to LAB</span>
+    <span class="n">L1</span><span class="p">,</span> <span class="n">A1</span><span class="p">,</span> <span class="n">B1</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">rgb2lab</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">r</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">,</span> <span class="n">g</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">,</span> <span class="n">b</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+        <span class="mi">3</span><span class="p">,</span> <span class="p">)</span>
+    <span class="c1"># applying the makeup color on image</span>
+    <span class="c1"># L1, A1, B1 = color.rgb2lab(np.array((self.r / 255., self.g / 255., self.b / 255.)).reshape(1, 1, 3)).reshape(3, )</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">L1</span> <span class="o">/</span> <span class="n">L</span>
+    <span class="n">lip_LAB</span> <span class="o">=</span> <span class="n">lip_LAB</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">lip_LAB</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">intensity</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">A1</span><span class="p">,</span> <span class="n">B1</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">intensity</span><span class="p">)</span> <span class="o">*</span> <span class="n">lip_LAB</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">lip_LAB</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">lip_LAB</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">intensity</span> <span class="o">*</span> <span class="p">(</span><span class="n">G</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="c1"># converting back toRGB</span>
+
+    <span class="n">im_copy</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">lab2rgb</span><span class="p">(</span><span class="n">lip_LAB</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="mi">255</span>
+
+    <span class="k">return</span> <span class="n">im_copy</span></div>
+
+
+<span class="k">def</span> <span class="nf">moist</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span> <span class="n">white</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;  finds all the points fillig the lips</span>
+<span class="sd">    Args:</span>
+<span class="sd">        param1 : if motion is detected this parameter is the X cordinate of the lower lip otherwise the X cordinates of the previous frame gloss parts must be passed</span>
+<span class="sd">        param2 : if motion is detected this parameter is the Y cordinate of the lower lip otherwise the Y cordinates of the previous frame gloss parts must be passed</span>
+<span class="sd">        param3 : whether motion is detected</span>
+<span class="sd">        param4 : red</span>
+<span class="sd">        param5 : green</span>
+<span class="sd">        param6 : blue</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        42-element tuple containing</span>
+
+<span class="sd">        -  (*array*): X cordinates of the pixels of the lips which must be glossy</span>
+<span class="sd">        -  (*array*): Y cordinates of the pixels of the lips which must be glossy</span>
+<span class="sd">            </span>
+<span class="sd">    Todo:</span>
+<span class="sd">        * needs major cleanup</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">intensitymoist</span> <span class="o">=</span><span class="mf">0.5</span>
+
+    <span class="n">val</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">rgb2lab</span><span class="p">((</span><span class="n">image</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">L</span><span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">val</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">L1</span><span class="p">,</span> <span class="n">A1</span><span class="p">,</span> <span class="n">B1</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">rgb2lab</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">white</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">,</span> <span class="n">white</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">,</span> <span class="n">white</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="p">)</span>
+    <span class="n">ll</span> <span class="o">=</span> <span class="n">L1</span> <span class="o">-</span> <span class="n">L</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">Li</span> <span class="o">=</span> <span class="n">val</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">light_points</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">Li</span><span class="p">)[</span><span class="o">-</span><span class="n">length</span><span class="p">:]</span>
+    <span class="c1"># light_points = sorted(Li)[:length]</span>
+    <span class="n">min_val</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">light_points</span><span class="p">)</span>
+    <span class="n">max_val</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">light_points</span><span class="p">)</span>
+
+
+
+<div class="viewcode-block" id="apply_blur"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.commons.apply_blur">[docs]</a><span class="k">def</span> <span class="nf">apply_blur</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">image2</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gussiankernel</span><span class="p">,</span> <span class="n">erosionkernel</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;  </span>
+<span class="sd">    applies blur  on the desired region</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (image) : input image</span>
+<span class="sd">        arg2 (image) : input image with applied color on the desired region</span>
+<span class="sd">        arg3 (int array) : X cordinates of the desired region</span>
+<span class="sd">        arg4 (int array) : Y cordinates of the desired region</span>
+<span class="sd">        arg5 (int) : Gussian blur kernel</span>
+<span class="sd">        arg6 (int) : erosion kernel</span>
+<span class="sd">        arg7 (float) : intensity of the applied color</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        the image with the applied blur on the desired region</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="nb">filter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">))</span>
+    <span class="nb">filter</span><span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1"># Erosion to reduce blur size</span>
+    <span class="nb">filter</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="p">(</span><span class="n">gussiankernel</span><span class="p">,</span> <span class="n">gussiankernel</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">erosionkernel</span><span class="p">,</span> <span class="n">erosionkernel</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="nb">filter</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">erode</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
+    <span class="n">alpha</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">filter</span>
+    <span class="n">alpha</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">filter</span>
+    <span class="n">alpha</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">filter</span>
+    <span class="n">im_copy</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">image2</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span><span class="n">image</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">im_copy</span></div>
+
+
+<div class="viewcode-block" id="apply_blur_color"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.commons.apply_blur_color">[docs]</a><span class="k">def</span> <span class="nf">apply_blur_color</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">gussiankernel</span><span class="o">=</span><span class="mi">51</span><span class="p">,</span> <span class="n">erosionkernel</span><span class="o">=</span><span class="mi">15</span><span class="p">):</span>
+
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    applies blur and color on the desired region</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (image) : input image</span>
+<span class="sd">        arg2 (int array) : X cordinates of the desired region</span>
+<span class="sd">        arg3 (int array) : Y cordinates of the desired region</span>
+<span class="sd">        arg4 : red value of rgb color</span>
+<span class="sd">        arg5 : green value of rgb color</span>
+<span class="sd">        arg6 : blue value of rgb color</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        the image with the applied clor and blur on the desired region</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        this function is used when we need the color to be more faded on the edges of the region, this will give us a more natural look which is used on blush, concelaer and foundation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># intensity = 0.8</span>
+    <span class="c1"># r = 51</span>
+    <span class="c1"># g = 36</span>
+    <span class="c1"># b = 87</span>
+    <span class="c1"># Create blush shape</span>
+    <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">))</span>
+
+    <span class="n">mask</span><span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="p">(</span><span class="n">gussiankernel</span><span class="p">,</span> <span class="n">gussiankernel</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">intensity</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">erosionkernel</span><span class="p">,</span> <span class="n">erosionkernel</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">erode</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># print(np.array(c_[x_right, y_right])[:, 0])</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2LAB</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mf">255.</span> <span class="o">*</span> <span class="mf">100.</span>
+    <span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">128.</span>
+    <span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mf">128.</span>
+    <span class="n">LAB</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">rgb2lab</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="p">)</span>
+    <span class="n">mean_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mask</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">mask</span><span class="p">])</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="n">lab</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">((</span><span class="n">LAB</span> <span class="o">-</span> <span class="n">mean_val</span><span class="p">),</span> <span class="n">mask</span><span class="p">)</span>
+
+    <span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">lab</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">lab</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">127</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+    <span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">val</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">lab</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">],</span> <span class="o">-</span><span class="mi">127</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+
+    <span class="n">image</span> <span class="o">=</span> <span class="p">(</span><span class="n">color</span><span class="o">.</span><span class="n">lab2rgb</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">*</span> <span class="mi">255</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">image</span></div>
+
+<div class="viewcode-block" id="moist"><a class="viewcode-back" href="../../../../index.html#src.cv.makeup.commons.moist">[docs]</a><span class="k">def</span> <span class="nf">moist</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span> <span class="n">white</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;  </span>
+<span class="sd">    applies gloss texture on the lips</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arg1 (image) : input image</span>
+<span class="sd">        arg2 (int array) : X cordinates of the lips</span>
+<span class="sd">        arg3 (int array) : Y cordinates of the lips</span>
+<span class="sd">        arg4 : a value betwwen 0 to 255 (the higher this value th more white glossy texture will be )</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        the image with the applied gloss on the lips</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">intensitymoist</span> <span class="o">=</span><span class="mf">0.2</span>
+
+    <span class="n">val</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">rgb2lab</span><span class="p">((</span><span class="n">image</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">L</span><span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">val</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">L1</span><span class="p">,</span> <span class="n">A1</span><span class="p">,</span> <span class="n">B1</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">rgb2lab</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">white</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">,</span> <span class="n">white</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">,</span> <span class="n">white</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="p">)</span>
+    <span class="n">ll</span> <span class="o">=</span> <span class="n">L1</span> <span class="o">-</span> <span class="n">L</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">Li</span> <span class="o">=</span> <span class="n">val</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">light_points</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">Li</span><span class="p">)[</span><span class="o">-</span><span class="n">length</span><span class="p">:]</span>
+    <span class="c1"># light_points = sorted(Li)[:length]</span>
+    <span class="n">min_val</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">light_points</span><span class="p">)</span>
+    <span class="n">max_val</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">light_points</span><span class="p">)</span>
+
+
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">max_val</span> <span class="ow">and</span> <span class="n">val</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span><span class="n">min_val</span><span class="p">):</span>
+            <span class="n">val</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">+=</span> <span class="n">ll</span><span class="o">*</span><span class="n">intensitymoist</span>
+
+
+
+    <span class="n">image2</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">image2</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">lab2rgb</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="mi">255</span>
+    <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="nb">filter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">))</span>
+    <span class="nb">filter</span><span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="nb">filter</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">erode</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
+    <span class="n">alpha</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">filter</span>
+    <span class="n">alpha</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">filter</span>
+    <span class="n">alpha</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">filter</span>
+    <span class="n">im_copy</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">image2</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span><span class="n">image</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">im_copy</span></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Faezeh Shayesteh, Ali Goldani.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

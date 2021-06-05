@@ -1,0 +1,877 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Virtual Mirror’s Documentation &mdash; Virtual Mirror 1.0.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> Virtual Mirror
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Virtual Mirror’s Documentation</a></li>
+<li><a class="reference internal" href="#module-src.cv.makeup.commons">Common Coloring Methods</a></li>
+<li><a class="reference internal" href="#constants">Constants</a></li>
+<li><a class="reference internal" href="#utils">Utils</a></li>
+<li><a class="reference internal" href="#appendix">Appendix</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Virtual Mirror</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Virtual Mirror’s Documentation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="virtual-mirror-s-documentation">
+<h1>Virtual Mirror’s Documentation<a class="headerlink" href="#virtual-mirror-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>This documentation was generated on Jun 05, 2021, and is rebuilt with every <code class="docutils literal notranslate"><span class="pre">master</span></code> release.</p>
+</div>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+<div class="section" id="module-src.cv.makeup.commons">
+<span id="common-coloring-methods"></span><h1>Common Coloring Methods<a class="headerlink" href="#module-src.cv.makeup.commons" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="src.cv.makeup.commons.apply_color">
+<code class="sig-name descname"><span class="pre">apply_color</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/cv/makeup/commons.html#apply_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.commons.apply_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>applies color to desired region</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>image</em>) – input image</p></li>
+<li><p><strong>arg2</strong> (<em>int array</em>) – X cordinates of the desired region that is going be colored</p></li>
+<li><p><strong>arg3</strong> (<em>int array</em>) – Y cordinates of the desired region that is going be colored</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – red value of rgb color</p></li>
+<li><p><strong>arg5</strong> (<em>int</em>) – green value of rgb color</p></li>
+<li><p><strong>arg6</strong> (<em>int</em>) – blue value of rgb color</p></li>
+<li><p><strong>arg7</strong> (<em>float</em>) – intensity of the applied color</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the image with the applied color on the desire area</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.commons.apply_blur">
+<code class="sig-name descname"><span class="pre">apply_blur</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gussiankernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">erosionkernel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/cv/makeup/commons.html#apply_blur"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.commons.apply_blur" title="Permalink to this definition">¶</a></dt>
+<dd><p>applies blur  on the desired region</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>image</em>) – input image</p></li>
+<li><p><strong>arg2</strong> (<em>image</em>) – input image with applied color on the desired region</p></li>
+<li><p><strong>arg3</strong> (<em>int array</em>) – X cordinates of the desired region</p></li>
+<li><p><strong>arg4</strong> (<em>int array</em>) – Y cordinates of the desired region</p></li>
+<li><p><strong>arg5</strong> (<em>int</em>) – Gussian blur kernel</p></li>
+<li><p><strong>arg6</strong> (<em>int</em>) – erosion kernel</p></li>
+<li><p><strong>arg7</strong> (<em>float</em>) – intensity of the applied color</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the image with the applied blur on the desired region</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.commons.apply_blur_color">
+<code class="sig-name descname"><span class="pre">apply_blur_color</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gussiankernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">51</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">erosionkernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/cv/makeup/commons.html#apply_blur_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.commons.apply_blur_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>applies blur and color on the desired region</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>image</em>) – input image</p></li>
+<li><p><strong>arg2</strong> (<em>int array</em>) – X cordinates of the desired region</p></li>
+<li><p><strong>arg3</strong> (<em>int array</em>) – Y cordinates of the desired region</p></li>
+<li><p><strong>arg4</strong> – red value of rgb color</p></li>
+<li><p><strong>arg5</strong> – green value of rgb color</p></li>
+<li><p><strong>arg6</strong> – blue value of rgb color</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the image with the applied clor and blur on the desired region</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>this function is used when we need the color to be more faded on the edges of the region, this will give us a more natural look which is used on blush, concelaer and foundation.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.commons.moist">
+<code class="sig-name descname"><span class="pre">moist</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/cv/makeup/commons.html#moist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.commons.moist" title="Permalink to this definition">¶</a></dt>
+<dd><p>applies gloss texture on the lips</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>image</em>) – input image</p></li>
+<li><p><strong>arg2</strong> (<em>int array</em>) – X cordinates of the lips</p></li>
+<li><p><strong>arg3</strong> (<em>int array</em>) – Y cordinates of the lips</p></li>
+<li><p><strong>arg4</strong> – a value betwwen 0 to 255 (the higher this value th more white glossy texture will be )</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the image with the applied gloss on the lips</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="constants">
+<h1>Constants<a class="headerlink" href="#constants" title="Permalink to this headline">¶</a></h1>
+<p>This scripts holds the constant point indexes for each of the face components.</p>
+<span class="target" id="module-src.cv.makeup.constants"></span></div>
+<div class="section" id="utils">
+<h1>Utils<a class="headerlink" href="#utils" title="Permalink to this headline">¶</a></h1>
+<dl class="simple">
+<dt>This script includes:</dt><dd><ul class="simple">
+<li><p>defenitions of functions for executing makeup workers in parallel to increase speed</p></li>
+<li><p>functions to be called by the REST API, for enabling and disabling webcam, makeups and generating desired image.</p></li>
+</ul>
+</dd>
+</dl>
+<span class="target" id="module-src.cv.makeup.utils"></span><dl class="py class">
+<dt id="src.cv.makeup.utils.Makeup_Worker">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">Makeup_Worker</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#Makeup_Worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.Makeup_Worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a makeup worker instance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>list</em>) – list of the bounds related to the makeup worker, it’s assigned in normal worker functions and used in static worker functions</p></li>
+<li><p><strong>arg2</strong> (<em>class</em>) – an instance of the related makeup worker, in case it exists (E.g. Lens)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="src.cv.makeup.utils.Globals">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">Globals</span></code><a class="reference internal" href="_modules/src/cv/makeup/utils.html#Globals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.Globals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Holds global values that are used by static workers and other functions</p>
+<dl class="simple">
+<dt>Properties:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">cap</dt>
+<dd class="field-odd"><p>Video captured from webcam, can be closed and open upon request</p>
+</dd>
+<dt class="field-even">face_detector</dt>
+<dd class="field-even"><p>Instance of MediaPipe face_detection module</p>
+</dd>
+<dt class="field-odd">face_mesher</dt>
+<dd class="field-odd"><p>Instance of MediaPipe face_mesh module</p>
+</dd>
+<dt class="field-even">makeup_workers</dt>
+<dd class="field-even"><p>Dictionary of the makeup workers and their related information</p>
+</dd>
+<dt class="field-odd">makeup args</dt>
+<dd class="field-odd"><p>parameter names that are given to makeup workers, used in the api designed for this purpose</p>
+</dd>
+<dt class="field-even">makeup instances</dt>
+<dd class="field-even"><ul class="simple">
+<li><p>lens</p></li>
+<li><p>eyeliner</p></li>
+<li><p>eyeshadow</p></li>
+<li><p>blush</p></li>
+<li><p>lipstick</p></li>
+<li><p>foundation</p></li>
+<li><p>concealer</p></li>
+</ul>
+</dd>
+<dt class="field-odd">motion detection variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prev_frame</strong>: holds the previos frame for comparing with the current frame</p></li>
+<li><p><strong>motion detected</strong> (bool): True if motion detected, False otherwise, starts with True</p></li>
+<li><p><strong>f_xmin</strong>: minimum x value among points of face crop</p></li>
+<li><p><strong>f_ymin</strong>: minimum y value among points of face crop</p></li>
+<li><p><strong>f_width</strong>: width of the face crop</p></li>
+<li><p><strong>f_height</strong>: height of the face crop</p></li>
+</ul>
+</dd>
+<dt class="field-even">idx_to_coordinates</dt>
+<dd class="field-even"><p>holds to coordinates calculated by turning face mesh index points to real coordinates in given image of face</p>
+</dd>
+<dt class="field-odd">output_frame</dt>
+<dd class="field-odd"><p>holds the given image without any change for using in static function or in special conditions</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.concealer_worker">
+<code class="sig-name descname"><span class="pre">concealer_worker</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_queue</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#concealer_worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.concealer_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a concealer effect on an input image.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+<li><p><strong>arg6</strong> (<em>list</em>) – shared list for appending the output</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.concealer_worker_static">
+<code class="sig-name descname"><span class="pre">concealer_worker_static</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_queue</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#concealer_worker_static"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.concealer_worker_static" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a concealer effect on an input image
+with the calculated boundaries in the normal worker function.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+<li><p><strong>arg6</strong> (<em>list</em>) – shared list for appending the output</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.blush_worker">
+<code class="sig-name descname"><span class="pre">blush_worker</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_queue</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#blush_worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.blush_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a blush effect on an input image.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+<li><p><strong>arg6</strong> (<em>list</em>) – shared list for appending the output</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.blush_worker_static">
+<code class="sig-name descname"><span class="pre">blush_worker_static</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_queue</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#blush_worker_static"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.blush_worker_static" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a blush effect on an input image
+with the calculated boundaries in the normal worker function.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+<li><p><strong>arg6</strong> (<em>list</em>) – shared list for appending the output</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.lipstick_worker">
+<code class="sig-name descname"><span class="pre">lipstick_worker</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gloss</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_queue</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#lipstick_worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.lipstick_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a lipstick effect on an input image.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+<li><p><strong>arg6</strong> (<em>list</em>) – shared list for appending the output</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.lisptick_worker_static">
+<code class="sig-name descname"><span class="pre">lisptick_worker_static</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gloss</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_queue</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#lisptick_worker_static"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.lisptick_worker_static" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a lipstick effect on an input image
+with the calculated boundaries in the normal worker function.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+<li><p><strong>arg6</strong> (<em>list</em>) – shared list for appending the output</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.eyeshadow_worker">
+<code class="sig-name descname"><span class="pre">eyeshadow_worker</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_queue</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#eyeshadow_worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.eyeshadow_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies an eyeshadow effect on an input image.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+<li><p><strong>arg6</strong> (<em>list</em>) – shared list for appending the output</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.eyeshadow_worker_static">
+<code class="sig-name descname"><span class="pre">eyeshadow_worker_static</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_queue</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#eyeshadow_worker_static"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.eyeshadow_worker_static" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a eyeshadow effect on an input image
+with the calculated boundaries in the normal worker function.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+<li><p><strong>arg6</strong> (<em>list</em>) – shared list for appending the output</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.eyeliner_worker">
+<code class="sig-name descname"><span class="pre">eyeliner_worker</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_queue</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#eyeliner_worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.eyeliner_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies an eyeliner effect on an input image.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+<li><p><strong>arg6</strong> (<em>list</em>) – shared list for appending the output</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.eyeliner_worker_static">
+<code class="sig-name descname"><span class="pre">eyeliner_worker_static</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_queue</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#eyeliner_worker_static"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.eyeliner_worker_static" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a eyeliner effect on an input image
+with the calculated boundaries in the normal worker function.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+<li><p><strong>arg6</strong> (<em>list</em>) – shared list for appending the output</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.foundation_worker">
+<code class="sig-name descname"><span class="pre">foundation_worker</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">numpy.ndarray</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#foundation_worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.foundation_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a foundation effect on an input image.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The given image with the foundation effect applied on it, this image will be
+used as an input to other activated makeup workers in order for them to apply their effect
+on this image.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.foundation_worker_static">
+<code class="sig-name descname"><span class="pre">foundation_worker_static</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">numpy.ndarray</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#foundation_worker_static"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.foundation_worker_static" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a foundation effect on an input image
+with the calculated boundaries in the normal worker function.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The given image with the foundation effect applied on it, this image will be
+used as an input to other activated makeup workers in order for them to apply their effect
+on this image.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.lens_worker">
+<code class="sig-name descname"><span class="pre">lens_worker</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">numpy.ndarray</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#lens_worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.lens_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a contact lens effect on an input image.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The given image with the contact effect applied on it, this image will be
+used as an input to other activated makeup workers in order for them to apply their effect
+on this image.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.lens_worker_static">
+<code class="sig-name descname"><span class="pre">lens_worker_static</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">numpy.ndarray</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#lens_worker_static"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.lens_worker_static" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a contact lens effect on an input image
+with the calculated boundaries in the normal worker function.
+This function is called by a threading function and its output
+is appended to a given list to be processed later.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>ndarray</em>) – input image, a crop of the face found in camera viewport</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The given image with the contact lens effect applied on it, this image will be
+used as an input to other activated makeup workers in order for them to apply their effect
+on this image.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.join_makeup_workers">
+<code class="sig-name descname"><span class="pre">join_makeup_workers</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">numpy.ndarray</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#join_makeup_workers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.join_makeup_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls all the enabled makeup workers to produce their results on the given image.
+If enabled, lens and foundation workers are called beforehand and their results are given to other workers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>arg1</strong> (<em>ndarray</em>) – The face crop given to apply makeup filters on</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The face crop with requested filters applied on</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>How it works:</dt><dd><ol class="arabic simple">
+<li><p>Create a list to keep threads and another list to use as shared memory between the threads</p></li>
+<li><p>Check if foundation and lens worker are enabled, if so, apply them sequentially, this is to prevent merging issues with other workers’ results</p></li>
+<li><p>Iterate over makeup workers and start a thread for any one of them that is active, the arguments for each function is based on its own details. Also, the shared list is also passed to the target function</p></li>
+<li><p>Threads are added to the threads list and after creation, they are started and joined to finish with each other</p></li>
+<li><p>The shared list which now holds the results of all the worker functions is sorted by the index of each worker to create proper layering of filters</p></li>
+<li><p>Makeup filters are applied to the proper area one by one in the order of their predecence</p></li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.join_makeup_workers_static">
+<code class="sig-name descname"><span class="pre">join_makeup_workers_static</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">numpy.ndarray</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#join_makeup_workers_static"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.join_makeup_workers_static" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls all the enabled makeup workers to produce their results on the given image without calculating the bounds.
+Only static methods are called in this function so the bounds that were calculated in the previous frame are used.
+If enabled, lens and foundation workers are called beforehand and their results are given to other workers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>arg1</strong> (<em>ndarray</em>) – The face crop given to apply makeup filters on</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The face crop with requested filters applied on</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>How it works:</dt><dd><p>The procedure is the same as <a class="reference internal" href="#src.cv.makeup.utils.join_makeup_workers" title="src.cv.makeup.utils.join_makeup_workers"><code class="xref py py-meth docutils literal notranslate"><span class="pre">join_makeup_workers()</span></code></a>, with the exception that in this method, static makeup workers are called.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.apply_makeup">
+<code class="sig-name descname"><span class="pre">apply_makeup</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#apply_makeup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.apply_makeup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a frame from webcam camera and prepares it for the makeup workers to apply their filters on it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Yields</dt>
+<dd class="field-odd"><p><em>byte array</em> – The final image is encoded and converted to byte array so that sending it over a REST API is feasible.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>How it works:</dt><dd><ol class="arabic simple">
+<li><dl class="simple">
+<dt>Preparing the input</dt><dd><ol class="arabic simple">
+<li><p>A frame is read from the webcam into an image</p></li>
+<li><p>An unchanged copy of the image is saved into the global <code class="docutils literal notranslate"><span class="pre">output_frame</span></code></p></li>
+<li><p>Image is flipped horizontally so that it is shown appropriately when displayed back to the user</p></li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Motion detection</dt><dd><ol class="arabic simple">
+<li><p>A gray version of the image is generated</p></li>
+<li><p>If the global <code class="docutils literal notranslate"><span class="pre">prev_frame</span></code> has not been initilized, copy the gray image into it and continue</p></li>
+<li><p>Calculate the absolute difference between the current frame and the global <code class="docutils literal notranslate"><span class="pre">prev_frame</span></code></p></li>
+<li><p>Threshold the difference to ignore minor differences</p></li>
+<li><p>Dilate the threshold result</p></li>
+<li><p>Find contours and calculate the contour area</p></li>
+<li><p>If the contour area is more than a certain amount, the global <code class="docutils literal notranslate"><span class="pre">motion_detected</span></code> flag will be set to <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>If motion has been detected:</dt><dd><ol class="arabic simple">
+<li><p>Process the image with MediaPipe’s face detection API, then crop the image with a padding to cover the whole face</p></li>
+<li><p>Process the cropped face image with MediaPipe’s face mesh API</p></li>
+<li><p>Convert the point indexes in <a class="reference internal" href="#module-src.cv.makeup.constants" title="src.cv.makeup.constants"><code class="xref py py-mod docutils literal notranslate"><span class="pre">src.cv.makeup.constants</span></code></a> into actual coordinates in the face crop</p></li>
+<li><p>Call the joining function by passing the face crop image to it to apply the requested filters</p></li>
+<li><p>Placing the face crop in the original image</p></li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>If no motion has been detected:</dt><dd><ol class="arabic simple">
+<li><p>Crop the image using the boundaries calculated the last time we detected motion</p></li>
+<li><p>Call the static joining method by passing the face crop to it to apply the requested filters</p></li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Sending the result:</dt><dd><ol class="arabic simple">
+<li><p>Encode the image in the desired extension (here we use <code class="docutils literal notranslate"><span class="pre">.jpg</span></code>)</p></li>
+<li><p>Put the image in a byte array and appending a proper header to be interpreted in the REST API`</p></li>
+</ol>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.enable_makeup">
+<code class="sig-name descname"><span class="pre">enable_makeup</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">makeup_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gloss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#enable_makeup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.enable_makeup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables the requested makeup so that the joining methods will be applied it in the next frame.
+It also passes the received arguments from the API to the corresponding function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg1</strong> (<em>string</em>) – name of the makeup, it can be one of:
+[eyeshadow, lipstick, blush, concealer, foundation, eyeliner, lens]</p></li>
+<li><p><strong>arg2</strong> (<em>int</em>) – rgb value of red color</p></li>
+<li><p><strong>arg3</strong> (<em>int</em>) – rgb value of green color</p></li>
+<li><p><strong>arg4</strong> (<em>int</em>) – rgb value of blue color</p></li>
+<li><p><strong>arg5</strong> (<em>float</em>) – intensity of the applied makeup</p></li>
+<li><p><strong>arg6</strong> (<em>bool</em>) – Determines whethere gloss needs to be applied or not (only for lipstick)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.disable_makeup">
+<code class="sig-name descname"><span class="pre">disable_makeup</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">makeup_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#disable_makeup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.disable_makeup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables the requested makeup so that the joining methods will not be applied it in the next frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>arg1</strong> (<em>string</em>) – name of the makeup, it can be one of:
+[eyeshadow, lipstick, blush, concealer, foundation, eyeliner, lens]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.start_cam">
+<code class="sig-name descname"><span class="pre">start_cam</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#start_cam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.start_cam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the camera with the desired camera index</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.cv.makeup.utils.stop_cam">
+<code class="sig-name descname"><span class="pre">stop_cam</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/cv/makeup/utils.html#stop_cam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.cv.makeup.utils.stop_cam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the camera when the user does not want to use the realtime virtual makeup functionality</p>
+</dd></dl>
+
+</div>
+<div class="section" id="appendix">
+<h1>Appendix<a class="headerlink" href="#appendix" title="Permalink to this headline">¶</a></h1>
+<div class="figure align-center" id="id1" style="width: 300px">
+<img alt="_images/absolute_diff.png" src="_images/absolute_diff.png" />
+<p class="caption"><span class="caption-text">This picture shows the result of absolute differences calculated for a frame in motion detecion part of <a class="reference internal" href="#src.cv.makeup.utils.apply_makeup" title="src.cv.makeup.utils.apply_makeup"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_makeup()</span></code></a>.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Faezeh Shayesteh, Ali Goldani.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
