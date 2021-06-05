@@ -868,16 +868,16 @@ def apply_makeup():
 
         Globals.prev_frame = gray.copy()
 
-        return image
+        # return image
 
-        # (flag, encodedImage) = cv2.imencode(".jpg", image)
+        (flag, encodedImage) = cv2.imencode(".jpg", image)
         
-        # # ensure the frame was successfully encoded
-        # if not flag:
-        #     continue
-        # # yield the output frame in the byte format
-        # yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
-        #     bytearray(encodedImage) + b'\r\n')
+        # ensure the frame was successfully encoded
+        if not flag:
+            continue
+        # yield the output frame in the byte format
+        yield (b'--frame\r\n' b'Content-Type: image/jpg\r\n\r\n' +
+            bytearray(encodedImage) + b'\r\n')
 
 
 def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, gloss=False):
