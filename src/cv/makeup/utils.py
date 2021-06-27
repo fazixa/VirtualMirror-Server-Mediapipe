@@ -953,7 +953,7 @@ def start_cam():
     """Opens the camera with the desired camera index
     """
     
-    Globals.cap.open(1)
+    Globals.cap.open(3)
 
 def stop_cam():
     """Closes the camera when the user does not want to use the realtime virtual makeup functionality

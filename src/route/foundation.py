@@ -4,6 +4,8 @@ from flask import request, Blueprint
 from flask_cors import cross_origin
 from PIL import Image
 from base64 import encodebytes
+
+from numpy import ndarray
 from src.route.json_encode import JSONEncoder
 from src.cv.makeup import commons, constants
 from mediapipe.python.solutions import face_detection
@@ -14,6 +16,8 @@ from src.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
 import cv2
 import imutils
 from flask import Flask, request, Response
+
+from .general import draw_roi_border
 
 foundation = Blueprint('foundation', __name__)
 
@@ -35,6 +39,7 @@ def get_response_image(image_path):
     encoded_img = encodebytes(byte_arr.getvalue()).decode(
         'ascii')  # encode as base64
     return encoded_img
+
 
 # ------------------------------------ non general
 @foundation.route('/api/makeup/image/foundation', methods=['POST'])
@@ -77,6 +82,7 @@ def simulator_lip():
 
         face_crop = user_image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
         face_height, face_width, _ = face_crop.shape
+
         face_crop = imutils.resize(face_crop, width=500)
         
         # image.flags.writeable = False
@@ -122,11 +128,13 @@ def simulator_lip():
                     crop = face_crop_copy[top_y:bottom_y, top_x:bottom_x,]
                     crop_makeup = commons.apply_blur_color(crop, cc-top_y,rr-top_x, b, g, r, intensity, 81, 30)
                     face_crop_copy[top_y:bottom_y, top_x:bottom_x] = crop_makeup
+                    face_crop_copy = draw_roi_border(face_crop_copy, top_x, top_y, bottom_x, bottom_y)
+
+
                 face_crop_copy = imutils.resize(face_crop_copy, width=face_width)
                 face_c_height, face_c_width, _ = face_crop_copy.shape
                 user_image[f_ymin:f_ymin+face_c_height, f_xmin:f_xmin+f_width] = face_crop_copy
 
-                cv2.rectangle(user_image, (f_xmin, f_ymin), (f_xmin+f_width, f_ymin+f_height), (200, 20, 20), 2)
 
                 predict_result = save_iamge(user_image,r,g,b,"foundation",intensity)
                 result.append(predict_result)
@@ -140,7 +148,7 @@ def simulator_lip():
         encoded_img.append(get_response_image(
             '{}/{}'.format(SIMULATOR_OUTPUT, image_path)))
 
-    return (JSONEncoder().encode(encoded_img), 200)
+    return (JSONEncoder().encode(encoded_img), 200) 
 
 
 def save_iamge(img,r_value,g_value,b_value,makeup_type,intensity):

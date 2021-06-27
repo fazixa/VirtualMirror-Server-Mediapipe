@@ -14,6 +14,7 @@ from src.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
 import cv2
 import imutils
 from flask import Flask, request, Response
+from .general import draw_roi_border
 
 concealer = Blueprint('concealer', __name__)
 
@@ -123,6 +124,8 @@ def simulator_lip():
                     crop = face_crop_copy[top_y:bottom_y, top_x:bottom_x,]
                     crop_makeup = commons.apply_blur_color(crop, cc-top_y,rr-top_x, b, g, r, intensity, 81, 30)
                     face_crop_copy[top_y:bottom_y, top_x:bottom_x] = crop_makeup
+                    face_crop_copy = draw_roi_border(face_crop_copy, top_x, top_y, bottom_x, bottom_y)
+
                 face_crop_copy = imutils.resize(face_crop_copy, width=face_width)
                 face_c_height, face_c_width, _ = face_crop_copy.shape
                 user_image[f_ymin:f_ymin+face_c_height, f_xmin:f_xmin+f_width] = face_crop_copy

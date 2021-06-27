@@ -15,6 +15,8 @@ import cv2
 import imutils
 from flask import Flask, request, Response
 
+from .general import draw_roi_border
+
 lipstick = Blueprint('lipstick', __name__)
 
 
@@ -85,6 +87,9 @@ def simulator_lip():
 
         face_crop = user_image[f_ymin:f_ymin+f_height, f_xmin:f_xmin+f_width]
         face_height, face_width, _ = face_crop.shape
+
+        c_offset_y, c_offset_x = (im_height - face_height) // 2, (im_width - face_width) // 2
+        
         face_crop = imutils.resize(face_crop, width=500)
         
         # image.flags.writeable = False
@@ -133,9 +138,12 @@ def simulator_lip():
                     crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
                     crop_makeup = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 31, 10)
                     face_crop_copy[top_y:bottom_y, top_x:bottom_x] = crop_makeup
+                    face_crop_copy = draw_roi_border(face_crop_copy, top_x, top_y, bottom_x, bottom_y)
+
                 face_crop_copy = imutils.resize(face_crop_copy, width=face_width)
                 face_c_height, face_c_width, _ = face_crop_copy.shape
                 user_image[f_ymin:f_ymin+face_c_height, f_xmin:f_xmin+f_width] = face_crop_copy
+
 
                 predict_result = save_iamge(user_image,r,g,b,"lipstick",intensity)
                 result.append(predict_result)
