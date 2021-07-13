@@ -126,8 +126,6 @@ def simulator_lip():
                 face_c_height, face_c_width, _ = face_crop_copy.shape
                 user_image[f_ymin:f_ymin+face_c_height, f_xmin:f_xmin+f_width] = face_crop_copy
 
-                cv2.rectangle(user_image, (f_xmin, f_ymin), (f_xmin+f_width, f_ymin+f_height), (200, 20, 20), 2)
-
                 predict_result = save_iamge(user_image,r,g,b,"foundation",intensity)
                 result.append(predict_result)
 
