@@ -86,12 +86,12 @@
 
 ################################################################
 
-import src.cv.makeup.utils as mutils
+# import src.cv.makeup.utils as mutils
 
-mutils.enable_makeup('lipstick', 142, 30, 29)
-mutils.enable_makeup('eyeshadow', 25, 30, 140, .3)
+# mutils.enable_makeup('lipstick', 142, 30, 29)
+# mutils.enable_makeup('eyeshadow', 25, 30, 140, .3)
 
-mutils.apply_makeup_video('video.mp4')
+# mutils.apply_makeup_video('video.mp4')
 
 
 

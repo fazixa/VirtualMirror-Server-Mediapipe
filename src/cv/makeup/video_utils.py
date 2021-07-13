@@ -49,7 +49,7 @@ class Globals:
     # face_resize_width = 500
 
 
-def lipstick_worker_video(image, r, g, b, intensity, gloss, out_queue = None):
+def lipstick_worker_video(image, r, g, b, intensity, gloss) -> None:
     for region in constants.LIPS:
         roi_x = []
         roi_y = []
@@ -57,13 +57,20 @@ def lipstick_worker_video(image, r, g, b, intensity, gloss, out_queue = None):
             roi_x.append(Globals.idx_to_coordinates[point][0])
             roi_y.append(Globals.idx_to_coordinates[point][1])
 
+        margin = 4
+        top_x = min(roi_x)-margin
+        top_y = min(roi_y)-margin
+        bottom_x = max(roi_x)+margin
+        bottom_y = max(roi_y)+margin
+
         rr, cc = polygon(roi_x, roi_y)
         
+        crop = image[top_y:bottom_y, top_x:bottom_x,]
         if gloss:
-            image = commons.moist(image, cc,rr, 220)
-
-        image_color = commons.apply_color(image, cc,rr, b, g, r, intensity)
-        image = commons.apply_blur(image,image_color,cc,rr, 21, 7)
+            crop = commons.moist(crop, cc-top_y,rr-top_x, 220)
+        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+        crop = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 21, 7)
+        image[top_y:bottom_y, top_x:bottom_x,] = crop
 
     return image
 
@@ -76,11 +83,20 @@ def eyeshadow_worker_video(image, r, g, b, intensity) -> None:
             roi_x.append(Globals.idx_to_coordinates[point][0])
             roi_y.append(Globals.idx_to_coordinates[point][1])
 
+        margin = 10
+        top_x = min(roi_x)-margin
+        top_y = min(roi_y)-margin
+        bottom_x = max(roi_x)+margin
+        bottom_y = max(roi_y)+margin
+
         rr, cc = polygon(roi_x, roi_y)
         
-        image_colored = commons.apply_color(image, cc,rr, b, g, r, intensity)
-        image = commons.apply_blur(image,image_colored,cc,rr, 31, 15)
+        crop = image[top_y:bottom_y, top_x:bottom_x,]
+        crop_colored = commons.apply_color(crop, cc-top_y,rr-top_x, b, g, r, intensity)
+        crop = commons.apply_blur(crop,crop_colored,cc-top_y,rr-top_x, 31, 15)
 
+        image[top_y:bottom_y, top_x:bottom_x,] = crop
+    
     return image
 
 
@@ -110,11 +126,11 @@ def join_makeup_workers_video(image) -> ndarray:
 def apply_makeup_video(filepath) -> None:
     cap = cv2.VideoCapture('video.mp4')
 
-    # video = cv2.VideoWriter('out.mp4',
-    #                         cv2.VideoWriter_fourcc(*'mp4v'),
-    #                         cap.get(cv2.CAP_PROP_FPS),
-    #                         (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-    # )
+    video = cv2.VideoWriter('out.mp4',
+                            cv2.VideoWriter_fourcc(*'mp4v'),
+                            cap.get(cv2.CAP_PROP_FPS),
+                            (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    )
 
     result = []
 
@@ -149,21 +165,14 @@ def apply_makeup_video(filepath) -> None:
 
                 Globals.idx_to_coordinates = idx_to_coordinates
 
-            result.append(join_makeup_workers_video(frame))
+            result = join_makeup_workers_video(frame)
 
-            # video.write(result)
+            video.write(result)
 
         print(time.time() - start)
-        print(len(result))
 
     cap.release()
-
-
-    for frame in result:
-        cv2.imshow('frame', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    # video.release()
+    video.release()
 
 
 def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, gloss=False):
