@@ -13,7 +13,7 @@ from src.route.foundation import *
 from src.route.lipstick import *
 from src.route.eyeliner import *
 from src.route.concealer import *
-from src.route.lens import *  
+# from src.route.lens import *  
 
 # Load environment config from .env file
 load_dotenv()
@@ -40,7 +40,7 @@ app.register_blueprint(foundation)
 app.register_blueprint(lipstick)
 app.register_blueprint(eyeliner)
 app.register_blueprint(concealer)
-app.register_blueprint(lens)
+# app.register_blueprint(lens)
 
 # Start connect to MongoDB
 # DB.init()

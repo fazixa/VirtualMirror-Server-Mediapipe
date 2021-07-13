@@ -6,7 +6,7 @@ from mediapipe.python.solutions import face_mesh
 import traceback
 
 from src.cv.makeup import commons, constants
-from src.cv.simulation.apply_lens import Lens
+# from src.cv.simulation.apply_lens import Lens
 
 mp_face_mesh = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
@@ -64,7 +64,7 @@ class Globals:
     concealer   = Makeup_Worker()
     eyeshadow   = Makeup_Worker()
     foundation  = Makeup_Worker()
-    lens        = Makeup_Worker(instance=Lens)
+    # lens        = Makeup_Worker(instance=Lens)
 
     #### Motion Detection Vars ####
     prev_frame = None
@@ -551,53 +551,53 @@ def foundation_worker_static(image, r, g, b, intensity) -> ndarray:
     return image
 
 
-def lens_worker(image, r, g, b, intensity) -> ndarray:
-    """This function applies a contact lens effect on an input image.
-    This function is called by a threading function and its output
-    is appended to a given list to be processed later.
+# def lens_worker(image, r, g, b, intensity) -> ndarray:
+#     """This function applies a contact lens effect on an input image.
+#     This function is called by a threading function and its output
+#     is appended to a given list to be processed later.
 
-    Args:
-        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
-        arg2 (int)      : rgb value of red color 
-        arg3 (int)      : rgb value of green color 
-        arg4 (int)      : rgb value of blue color
-        arg5 (float)    : intensity of the applied makeup
+#     Args:
+#         arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+#         arg2 (int)      : rgb value of red color 
+#         arg3 (int)      : rgb value of green color 
+#         arg4 (int)      : rgb value of blue color
+#         arg5 (float)    : intensity of the applied makeup
         
-    Returns:
-        ndarray: The given image with the contact effect applied on it, this image will be
-        used as an input to other activated makeup workers in order for them to apply their effect
-        on this image.
-    """
+#     Returns:
+#         ndarray: The given image with the contact effect applied on it, this image will be
+#         used as an input to other activated makeup workers in order for them to apply their effect
+#         on this image.
+#     """
 
-    return Globals.lens.instance.apply_lens(image, r, g, b)
+#     return Globals.lens.instance.apply_lens(image, r, g, b)
 
-def lens_worker_static(image, r, g, b, intensity) -> ndarray:
-    """This function applies a contact lens effect on an input image
-    with the calculated boundaries in the normal worker function.
-    This function is called by a threading function and its output
-    is appended to a given list to be processed later.
+# def lens_worker_static(image, r, g, b, intensity) -> ndarray:
+#     """This function applies a contact lens effect on an input image
+#     with the calculated boundaries in the normal worker function.
+#     This function is called by a threading function and its output
+#     is appended to a given list to be processed later.
 
-    Args:
-        arg1 (ndarray)  : input image, a crop of the face found in camera viewport
-        arg2 (int)      : rgb value of red color 
-        arg3 (int)      : rgb value of green color 
-        arg4 (int)      : rgb value of blue color
-        arg5 (float)    : intensity of the applied makeup
+#     Args:
+#         arg1 (ndarray)  : input image, a crop of the face found in camera viewport
+#         arg2 (int)      : rgb value of red color 
+#         arg3 (int)      : rgb value of green color 
+#         arg4 (int)      : rgb value of blue color
+#         arg5 (float)    : intensity of the applied makeup
         
-    Returns:
-        ndarray: The given image with the contact lens effect applied on it, this image will be
-        used as an input to other activated makeup workers in order for them to apply their effect
-        on this image.
-    """
+#     Returns:
+#         ndarray: The given image with the contact lens effect applied on it, this image will be
+#         used as an input to other activated makeup workers in order for them to apply their effect
+#         on this image.
+#     """
     
-    return Globals.lens.instance.apply_lens_static(image, r, g, b)
+#     return Globals.lens.instance.apply_lens_static(image, r, g, b)
 
 
 ####################################################################################################################################
 
 
 Globals.makeup_workers = {
-    'lens_worker':          { 'function': lens_worker,          'static_function': lens_worker_static,       'args': [], 'enabled': False, 'enabled_first': False},
+    # 'lens_worker':          { 'function': lens_worker,          'static_function': lens_worker_static,       'args': [], 'enabled': False, 'enabled_first': False},
     'lipstick_worker':      { 'function': lipstick_worker,      'static_function': lisptick_worker_static,   'args': [], 'enabled': False },
     'eyeshadow_worker':     { 'function': eyeshadow_worker,     'static_function': eyeshadow_worker_static,  'args': [], 'enabled': False },
     'eyeliner_worker':      { 'function': eyeliner_worker,      'static_function': eyeliner_worker_static,   'args': [], 'enabled': False },
@@ -634,8 +634,8 @@ def join_makeup_workers(image) -> ndarray:
     if Globals.makeup_workers['foundation_worker']['enabled_first']:
         image = foundation_worker(image, *Globals.makeup_workers['foundation_worker']['args'])
 
-    if Globals.makeup_workers['lens_worker']['enabled_first']:
-        image = lens_worker(image, *Globals.makeup_workers['lens_worker']['args'])
+    # if Globals.makeup_workers['lens_worker']['enabled_first']:
+    #     image = lens_worker(image, *Globals.makeup_workers['lens_worker']['args'])
 
     for makeup_worker in Globals.makeup_workers:
         worker = Globals.makeup_workers[makeup_worker]
@@ -953,7 +953,7 @@ def start_cam():
     """Opens the camera with the desired camera index
     """
     
-    Globals.cap.open(1)
+    Globals.cap.open(0)
 
 def stop_cam():
     """Closes the camera when the user does not want to use the realtime virtual makeup functionality
