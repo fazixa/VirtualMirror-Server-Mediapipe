@@ -1,9 +1,7 @@
 ################################ Read from MS HD 3000
-
-
 # import cv2
 
-# cap = cv2.VideoCapture(3)
+# cap = cv2.VideoCapture(0)
 
 # if not cap.isOpened():
 #     print('ERROR! Unable to open camera')
@@ -95,3 +93,10 @@ mutils.enable_makeup('eyeshadow', 25, 30, 140, .3)
 
 mutils.apply_makeup_video('video.mp4')
 
+
+
+import src.cv.makeup.video_utils as vutils
+
+vutils.enable_makeup('lipstick', 142, 30, 29)
+vutils.enable_makeup('eyeshadow', 25, 30, 140, .3)
+vutils.apply_makeup_video('video.mp4')
