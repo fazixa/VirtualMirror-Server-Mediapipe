@@ -2,7 +2,7 @@
 Backend API for Virtual Mirror Web Application
 
 ## Requirement
-- Python 3.7
+- Python 3.7+
 - build-essentials
 
 ## How to run server
