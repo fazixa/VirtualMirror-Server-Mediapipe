@@ -1,7 +1,10 @@
 # Virtual Mirror MediaPipe
 Backend API for Virtual Mirror Web Application
 
-## Requirement
+## Documentation
+Documentation can be found [here](/docs/build/html/index.html).
+
+## Requirements
 - Python 3.7+
 - build-essentials
 
