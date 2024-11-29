@@ -949,11 +949,11 @@ def disable_makeup(makeup_type):
         Globals.makeup_workers['lens_worker']['enabled_first'] = False
 
 
-def start_cam():
+def start_cam(camera_index):
     """Opens the camera with the desired camera index
     """
     
-    Globals.cap.open(1)
+    Globals.cap.open(camera_index)
 
 def stop_cam():
     """Closes the camera when the user does not want to use the realtime virtual makeup functionality
