@@ -47,8 +47,8 @@ mediapipe
 networkx
 numpy
 oauthlib
+opencv-python-headless
 opencv-contrib-python
-opencv-python
 opt-einsum
 packaging
 pandas
