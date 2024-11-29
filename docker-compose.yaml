@@ -16,14 +16,14 @@ services:
       - PORT=5000
       - DEBUG=true
       - CAMERA_INDEX=0
-    image: virtualmirror-server
+    image: galiold/virtualmirror-server:latest
     devices:
       - "/dev/video0:/dev/video0" 
 
   front:
     ports:
       - 8080:8080
-    image: virtualmirror-front:latest
+    image: galiold/virtualmirror-front:latest
 
 networks:
   internal_network:
