@@ -1,0 +1,30 @@
+name: virtualmirror
+services:
+  server:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+    ports:
+      - 5000:5000
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5000
+      - DEBUG=true
+      - CAMERA_INDEX=0
+    image: virtualmirror-server
+    devices:
+      - "/dev/video0:/dev/video0" 
+
+  front:
+    ports:
+      - 8080:8080
+    image: virtualmirror-front:latest
+
+networks:
+  internal_network:
+    driver: bridge
