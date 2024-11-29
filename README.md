@@ -4,7 +4,7 @@ Backend API for Virtual Mirror Web Application
 ## Documentation
 Documentation can be found [here](/docs/build/html/index.html).
 
-## How to run server
+## How to run the server
 
 ### Using our docker image (recommended)
 1. Clone the repository
