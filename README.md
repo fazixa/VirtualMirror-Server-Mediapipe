@@ -6,7 +6,7 @@ Documentation can be found [here](/docs/build/html/index.html).
 
 ## How to run the server
 
-### Using our docker image (recommended)
+### Using our docker image (recommended for Unix OS)
 1. Clone the repository
     ```
     $ git clone https://github.com/fazixa/VirtualMirror-Server-Mediapipe.git
@@ -40,3 +40,5 @@ The app can now be accessed at `localhost:8080`.
     ```
     $ python app.py --host 0.0.0.0 --port 5000 --debug True --camera-index 0
     ```
+**Notes**: 
+- If you have multiple cameras connected you can change the camera input by changing --camera-index
