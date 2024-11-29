@@ -72,7 +72,6 @@ scikit-image
 scikit-learn
 scipy
 six
-sklearn
 snowballstemmer
 soupsieve
 Sphinx
